@@ -17,6 +17,10 @@ voice = [
 generate = [
     "anthropic>=0.40",
 ]
+browser = [
+    "playwright>=1.48",
+    "playwright-stealth>=2.0",
+]
 
 [project.scripts]
 gr = "gr_autopilot.cli:app"
@@ -53,7 +57,13 @@ strict = true
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["sentence_transformers.*", "chromadb.*", "anthropic.*"]
+module = [
+    "sentence_transformers.*",
+    "chromadb.*",
+    "anthropic.*",
+    "playwright.*",
+    "playwright_stealth.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -72,6 +82,9 @@ omit = [
     "src/gr_autopilot/voice/embedder.py",
     "src/gr_autopilot/voice/chroma_store.py",
     "src/gr_autopilot/generate/anthropic_client.py",
+    "src/gr_autopilot/actions/playwright_backend.py",
+    "src/gr_autopilot/browser/session.py",
+    "src/gr_autopilot/orchestrator/pipeline.py",
 ]
 
 [tool.coverage.report]

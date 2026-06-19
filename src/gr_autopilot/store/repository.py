@@ -74,3 +74,58 @@ def targets(conn: sqlite3.Connection, require_rating: bool = True) -> list[sqlit
         query += " AND b.my_rating > 0"
     query += " ORDER BY b.date_read DESC"
     return conn.execute(query).fetchall()
+
+
+def start_run(conn: sqlite3.Connection, mode: str) -> int:
+    cur = conn.execute("INSERT INTO runs (started_at, mode) VALUES (datetime('now'), ?)", (mode,))
+    conn.commit()
+    return int(cur.lastrowid or 0)
+
+
+def finish_run(conn: sqlite3.Connection, run_id: int, planned: int, done: int, failed: int) -> None:
+    conn.execute(
+        """
+        UPDATE runs SET finished_at = datetime('now'),
+            actions_planned = ?, actions_done = ?, actions_failed = ?
+        WHERE run_id = ?
+        """,
+        (planned, done, failed, run_id),
+    )
+    conn.commit()
+
+
+def record_action(
+    conn: sqlite3.Connection,
+    run_id: int,
+    book_id: int | None,
+    action_type: str,
+    payload_hash: str,
+    status: str,
+    *,
+    dry_run: bool,
+    detail: str = "",
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO actions_log
+            (run_id, book_id, action_type, payload_hash, status, dry_run, created_at, detail)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
+        """,
+        (run_id, book_id, action_type, payload_hash, status, int(dry_run), detail),
+    )
+    conn.commit()
+
+
+def already_done(
+    conn: sqlite3.Connection, book_id: int | None, action_type: str, payload_hash: str
+) -> bool:
+    """True if this exact action already completed successfully (idempotency guard)."""
+    row = conn.execute(
+        """
+        SELECT 1 FROM actions_log
+        WHERE book_id IS ? AND action_type = ? AND payload_hash = ? AND status = 'done'
+        LIMIT 1
+        """,
+        (book_id, action_type, payload_hash),
+    ).fetchone()
+    return row is not None

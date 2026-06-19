@@ -37,5 +37,28 @@ def status() -> None:
     typer.echo(f"books={total} review_targets={n_targets}")
 
 
+@app.command()
+def stop() -> None:
+    """Engage the kill switch: write a STOP sentinel that halts in-flight writes."""
+    settings = Settings()
+    stop_file = settings.db_path.parent / "STOP"
+    stop_file.parent.mkdir(parents=True, exist_ok=True)
+    stop_file.write_text("stop")
+    typer.echo(f"Kill switch engaged: {stop_file}")
+
+
+@app.command()
+def review(*, dry_run: bool = True, limit: int | None = None) -> None:
+    """Generate reviews for unreviewed books (and post them unless --no-dry-run is set)."""
+    from gr_autopilot.orchestrator.pipeline import run_review
+
+    summary = run_review(dry_run=dry_run, limit=limit)
+    mode = "dry_run" if summary.dry_run else "live"
+    typer.echo(
+        f"run={summary.run_id} mode={mode} planned={summary.planned} "
+        f"done={summary.done} failed={summary.failed}"
+    )
+
+
 if __name__ == "__main__":
     app()
