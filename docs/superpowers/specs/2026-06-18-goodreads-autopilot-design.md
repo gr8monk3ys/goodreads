@@ -1,6 +1,6 @@
 # goodreads-autopilot — Design Spec
 
-> Status: **Draft for user review** · Date: 2026-06-18 · Companion: [verified research notes](../research/2026-06-18-goodreads-autopilot-research.md)
+> Status: **Approved (sign-off 2026-06-18)** · Date: 2026-06-18 · Companion: [verified research notes](../research/2026-06-18-goodreads-autopilot-research.md)
 >
 > A production Python suite that automates a single Goodreads account: ingests the user's library, learns their reviewing voice into a vector DB, generates new reviews with Claude, and writes back to Goodreads (reviews, ratings, shelves/tags, want-to-read, lists) via an authenticated browser session — because **no Goodreads API exists**. Runs fully autonomously with a kill switch and dry-run underneath, and ships with CI that both schedules the automation and gates code quality before merge.
 
@@ -37,12 +37,12 @@ Goodreads retired its API (no keys since 2020-12-08; existing keys 403 by late 2
 |---|----------|---------|
 | 1 | Generation-target scope | `Exclusive Shelf == 'read'` **AND** empty review **AND** `My Rating > 0` (rating>0 configurable, default ON). One review per `book_id`; re-reads (`Read Count > 1`) treated as one target. Custom exclusive shelves excluded by default. |
 | 2 | Write-job autonomy gate | Fully autonomous on cron. Kill switch = `DISABLE_WRITES` env **and** a `STOP` sentinel file checked before every action. Optional GitHub **Environment approval** gate available but **OFF** by default. |
-| 3 | Write surface scope | **Phase A:** post review + set rating + set exclusive shelf (incl. want-to-read). **Phase B:** custom shelves (tags) + Listopia lists. Minimal-by-default; each action individually toggleable. |
+| 3 | Write surface scope | **Both Phase A + B in the first build** (sign-off): post review + set rating + set exclusive shelf (incl. want-to-read) **and** custom shelves (tags) + Listopia lists. Each action individually toggleable; build sequences A before B internally for incremental verification. |
 | 4 | Account-risk posture | Accepted (user chose autonomous). Conservative throttle defaults: `MAX_ACTIONS_PER_RUN=10`, randomized 8–25s inter-action delay, daily cap, exponential backoff. |
 | 5 | AI labeling / human-in-loop | No label, no human gate by default (autonomous). `LABEL_AI_REVIEWS` and `REQUIRE_APPROVAL` config flags available, default OFF. Dry-run + kill switch are the safety net. |
 | 6 | CI coverage / security gating | `pytest --cov-fail-under=80` blocks. Ruff `S` rules (flake8-bandit) **block**; standalone Bandit emits **SARIF** to the Security tab (non-blocking) to avoid double-gating noise. |
 | 7 | Self-hosted runner form factor | Ephemeral container/VM on a residential connection, dedicated **non-root** user, `harden-runner` egress allowlist. Must be online for cron ticks; missed ticks caught by next run (idempotent). |
-| 8 | Repo privacy | **HARD PREREQUISITE: the GitHub repo MUST be private** before any self-hosted runner is attached. Public-repo + self-hosted runner = fork-PR RCE on the user's machine. |
+| 8 | Repo privacy | **Confirmed already private** (sign-off). This is what makes the self-hosted residential runner safe; privacy must be *maintained* — a public repo + self-hosted runner = fork-PR RCE on the user's machine. |
 
 ## 4. Architecture
 
@@ -163,7 +163,7 @@ Dependency order, each its own spec→plan→build→review cycle where useful:
 2. **ingest + store** — CSV → SQLite, target detection. *(First real subsystem.)*
 3. **voice** — embeddings + Chroma retrieval.
 4. **generate** — Claude RAG drafting (mockable; cache-hit asserted).
-5. **browser + live capture (§9) + actions** — the ToS-risky layer, dry-run-first.
+5. **browser + live capture (§9) + actions** — the ToS-risky layer, dry-run-first. With A+B in scope, `actions` covers reviews/ratings/shelves **and** custom-shelf (tag) + Listopia-list ops; §9 capture includes the create-shelf and list-add flows.
 6. **orchestrator + cli** — wire it together.
 7. **automation.yml** + self-hosted residential runner (private repo) — scheduled writes.
 
@@ -173,7 +173,7 @@ Dependency order, each its own spec→plan→build→review cycle where useful:
 
 ## 12. Open Questions for User Sign-Off
 
-Defaults in §3 are chosen to let the build proceed, but confirm or override:
+**Resolved at sign-off (2026-06-18):** (1) rated-reads-only targets; (2) **both** Phase A + B in the first build; (3) unlabeled & unattended — dry-run + kill switch are the only gate; (4) repo already private; (5) coverage 80% + Bandit non-blocking accepted. Original questions retained for the record:
 1. Generation targets: rated-reads-only (default) vs all read-but-unreviewed?
 2. Write surface: ship Phase A only first (reviews+ratings+shelves), or A+B together (also tags+lists)?
 3. Keep AI reviews unlabeled and unattended (default), or label / add a one-time approval gate?
