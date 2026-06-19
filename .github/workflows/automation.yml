@@ -1,0 +1,88 @@
+name: automation
+# Scheduled run of the Goodreads pipeline. TWO STAGES BY DESIGN:
+#   generate (hosted) — contacts api.anthropic.com only, never Goodreads
+#   post (self-hosted, residential IP) — contacts www.goodreads.com only
+# The post job is gated off until you (a) implement playwright_backend.py from the
+# capture runbook and (b) attach a self-hosted runner labelled `residential`.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no writes to Goodreads)"
+        type: boolean
+        default: true
+      limit:
+        description: "Max actions this run"
+        type: string
+        default: "5"
+  # schedule:                 # enable once the post job is live
+  #   - cron: "0 9 * * *"     # daily 09:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: goodreads-automation
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      GR_MAX_ACTIONS_PER_RUN: ${{ github.event.inputs.limit || '5' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+      - run: uv sync --locked --extra voice --extra generate
+      # TODO(data): provide your library export + built index. Options:
+      #   - commit goodreads_library_export.csv to this PRIVATE repo, or
+      #   - restore it (and the Chroma index) from a cache/artifact, or
+      #   - keep them on the self-hosted runner and skip ingest here.
+      - name: Generate drafts (dry-run; never contacts Goodreads)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          uv run gr ingest goodreads_library_export.csv
+          uv run gr review --dry-run --limit "${GR_MAX_ACTIONS_PER_RUN}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: store
+          path: data/
+
+  post:
+    # Performs the real writes on a residential-IP self-hosted runner.
+    # Disabled until the Playwright backend is implemented and a runner is attached.
+    if: ${{ github.event.inputs.dry_run == 'false' }}
+    needs: generate
+    runs-on: [self-hosted, linux, x64, residential, playwright]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: step-security/harden-runner@v2
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            www.goodreads.com:443
+            github.com:443
+            api.github.com:443
+      - uses: astral-sh/setup-uv@v8
+      - run: uv sync --locked --extra browser --extra voice --extra generate
+      - uses: actions/download-artifact@v4
+        with:
+          name: store
+          path: data/
+      - name: Restore Playwright session
+        env:
+          PLAYWRIGHT_STORAGE_STATE_B64: ${{ secrets.PLAYWRIGHT_STORAGE_STATE_B64 }}
+        run: |
+          mkdir -p playwright/.auth
+          echo "$PLAYWRIGHT_STORAGE_STATE_B64" | base64 -d > playwright/.auth/state.json
+      - name: Post reviews (LIVE)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GR_LIMIT: ${{ github.event.inputs.limit || '5' }}
+        run: uv run gr review --no-dry-run --limit "${GR_LIMIT}"
+      - name: Scrub session
+        if: always()
+        run: rm -f playwright/.auth/state.json
