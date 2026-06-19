@@ -14,6 +14,9 @@ voice = [
     "chromadb>=0.5",
     "sentence-transformers>=3",
 ]
+generate = [
+    "anthropic>=0.40",
+]
 
 [project.scripts]
 gr = "gr_autopilot.cli:app"
@@ -50,7 +53,7 @@ strict = true
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["sentence_transformers.*", "chromadb.*"]
+module = ["sentence_transformers.*", "chromadb.*", "anthropic.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -68,6 +71,7 @@ exclude_dirs = ["tests"]
 omit = [
     "src/gr_autopilot/voice/embedder.py",
     "src/gr_autopilot/voice/chroma_store.py",
+    "src/gr_autopilot/generate/anthropic_client.py",
 ]
 
 [tool.coverage.report]
