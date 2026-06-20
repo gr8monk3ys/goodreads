@@ -17,9 +17,10 @@ ingest   CSV export  -> normalized records          (stdlib csv)
 store    records      -> SQLite (books/reviews/shelves/runs/actions_log)
 voice    reviews      -> embeddings + vector store   (bge-small + Chroma; protocol-based)
 generate target book  -> review draft in your voice  (Claude RAG, prompt-cached)
+catalog  book id      -> public genres / metadata     (no auth; __NEXT_DATA__ read)
 browser  one-time login -> saved Playwright session  (storage_state + stealth)
 actions  draft/shelf  -> Goodreads writes            (kill switch + idempotency + throttle)
-orchestrator + cli     -> end-to-end workflows        (gr ingest | review | run | stop | status)
+orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | review | run | stop | status)
 ```
 
 Each layer sits behind a typed interface, so the risky browser layer is quarantined and
@@ -30,8 +31,9 @@ everything above it is pure local data work — unit-tested without ever touchin
 | Layer | State |
 |-------|-------|
 | Foundation + CI quality gate (uv, ruff, mypy --strict, pytest, bandit) | ✅ built & green |
-| ingest · store · voice · generate | ✅ built & green (40 tests, ~98% coverage) |
-| actions safety spine · orchestrator · CLI (`stop`, `review` dry-run) | ✅ built & green |
+| ingest · store · voice · generate | ✅ built & green |
+| catalog — public genre enrichment (`gr enrich`, no auth, live-verified) | ✅ built & green |
+| actions safety spine · orchestrator · CLI (`stop`/`review`/`enrich`) | ✅ built & green (48 tests, ~97% coverage) |
 | **Playwright write backend** | ⏳ needs your one-time [live capture](docs/superpowers/research/write-flows-capture-runbook.md) |
 | Scheduled `automation.yml` + self-hosted residential runner | ⏳ planned |
 
@@ -49,6 +51,7 @@ uv sync --extra browser                    # + Playwright (for writes)
 # 1. Export your library from Goodreads: My Books -> Import/Export -> Export Library
 uv run gr ingest goodreads_library_export.csv
 uv run gr status                           # books=... review_targets=...
+uv run gr enrich                           # fetch genres for your books (public, no login)
 
 # 2. (after installing voice+generate extras and ANTHROPIC_API_KEY) generate, dry-run
 uv run gr review --dry-run --limit 1       # generates drafts, logs the writes it WOULD make
@@ -78,5 +81,11 @@ uv run ruff check .    # lint
 uv run mypy            # strict type check
 uv run bandit -c pyproject.toml -r src
 ```
+
+## Credits
+
+The read-only catalog layer uses the public-data technique from
+[goodreads-mcp](https://github.com/shreeyachand/goodreads-mcp) — reading the embedded
+`__NEXT_DATA__` JSON of public book pages. Reimplemented here (no dependency), credited with thanks.
 
 GPL-3.0. Built with [Claude Code](https://claude.com/claude-code).
