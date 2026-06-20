@@ -50,6 +50,7 @@ select = ["E", "F", "I", "UP", "B", "S"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
+"src/gr_autopilot/catalog/goodreads_public.py" = ["S310"]  # fixed-host public read
 
 [tool.mypy]
 python_version = "3.12"
@@ -85,6 +86,7 @@ omit = [
     "src/gr_autopilot/actions/playwright_backend.py",
     "src/gr_autopilot/browser/session.py",
     "src/gr_autopilot/orchestrator/pipeline.py",
+    "src/gr_autopilot/catalog/goodreads_public.py",
 ]
 
 [tool.coverage.report]

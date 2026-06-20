@@ -59,3 +59,9 @@ CREATE TABLE IF NOT EXISTS actions_log (
 
 CREATE INDEX IF NOT EXISTS idx_actions_idempotency
     ON actions_log (book_id, action_type, payload_hash, status);
+
+CREATE TABLE IF NOT EXISTS book_genres (
+    book_id INTEGER REFERENCES books(book_id) ON DELETE CASCADE,
+    genre   TEXT NOT NULL,
+    PRIMARY KEY (book_id, genre)
+);

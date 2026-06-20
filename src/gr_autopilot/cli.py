@@ -38,6 +38,18 @@ def status() -> None:
 
 
 @app.command()
+def enrich(limit: int | None = None) -> None:
+    """Fetch genres for books missing them via public read (no login)."""
+    from gr_autopilot.catalog.enrich import enrich_genres
+    from gr_autopilot.catalog.goodreads_public import GoodreadsPublicCatalog
+
+    settings = Settings()
+    conn = _open_db(settings)
+    count = enrich_genres(conn, GoodreadsPublicCatalog(), limit=limit)
+    typer.echo(f"enriched {count} books with genres")
+
+
+@app.command()
 def stop() -> None:
     """Engage the kill switch: write a STOP sentinel that halts in-flight writes."""
     settings = Settings()

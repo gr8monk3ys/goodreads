@@ -129,3 +129,22 @@ def already_done(
         (book_id, action_type, payload_hash),
     ).fetchone()
     return row is not None
+
+
+def books_without_genres(conn: sqlite3.Connection) -> list[int]:
+    rows = conn.execute(
+        """
+        SELECT b.book_id FROM books b
+        WHERE NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.book_id)
+        ORDER BY b.book_id
+        """
+    ).fetchall()
+    return [int(r["book_id"]) for r in rows]
+
+
+def set_book_genres(conn: sqlite3.Connection, book_id: int, genres: Sequence[str]) -> None:
+    for genre in genres:
+        conn.execute(
+            "INSERT OR IGNORE INTO book_genres (book_id, genre) VALUES (?, ?)", (book_id, genre)
+        )
+    conn.commit()

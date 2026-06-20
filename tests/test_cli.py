@@ -22,6 +22,15 @@ def test_ingest_then_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     assert "review_targets=1" in result.output
 
 
+def test_enrich_empty_db_makes_no_network_calls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    result = runner.invoke(app, ["enrich"])
+    assert result.exit_code == 0, result.output
+    assert "enriched 0 books" in result.output
+
+
 def test_stop_writes_sentinel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     result = runner.invoke(app, ["stop"])

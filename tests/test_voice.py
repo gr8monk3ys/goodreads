@@ -1,5 +1,6 @@
 import sqlite3
 
+from gr_autopilot.store.repository import set_book_genres
 from gr_autopilot.voice.index import build_index, retrieve
 from gr_autopilot.voice.memory_store import InMemoryVectorStore, cosine
 from gr_autopilot.voice.protocols import Embedder
@@ -78,3 +79,14 @@ def test_retrieve_where_filter(conn: sqlite3.Connection) -> None:
     build_index(conn, FakeEmbedder(), store)
     res = retrieve("love magic", FakeEmbedder(), store, k=5, where={"rating": 5})
     assert [e.id for e in res] == ["1"]  # only book 1 has rating 5
+
+
+def test_build_index_includes_genre_metadata(conn: sqlite3.Connection) -> None:
+    conn.execute("INSERT INTO books (book_id, title, my_rating) VALUES (1, 'A', 5)")
+    conn.execute("INSERT INTO reviews (book_id, review_text) VALUES (1, 'space war robot')")
+    conn.commit()
+    set_book_genres(conn, 1, ("Sci-Fi",))
+    store = InMemoryVectorStore()
+    build_index(conn, FakeEmbedder(), store)
+    res = retrieve("space", FakeEmbedder(), store, k=5, where={"genre": "Sci-Fi"})
+    assert [e.id for e in res] == ["1"]

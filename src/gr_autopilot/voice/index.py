@@ -12,7 +12,8 @@ def build_index(conn: sqlite3.Connection, embedder: Embedder, store: VectorStore
     """
     rows = conn.execute(
         """
-        SELECT r.book_id AS book_id, r.review_text AS review_text, b.my_rating AS my_rating
+        SELECT r.book_id AS book_id, r.review_text AS review_text, b.my_rating AS my_rating,
+               (SELECT g.genre FROM book_genres g WHERE g.book_id = b.book_id LIMIT 1) AS genre
         FROM reviews r
         JOIN books b ON b.book_id = r.book_id
         WHERE r.is_empty = 0
@@ -24,7 +25,7 @@ def build_index(conn: sqlite3.Connection, embedder: Embedder, store: VectorStore
     vectors = embedder.embed_documents(texts)
     ids = [str(r["book_id"]) for r in rows]
     metadata: list[dict[str, object]] = [
-        {"book_id": r["book_id"], "rating": r["my_rating"]} for r in rows
+        {"book_id": r["book_id"], "rating": r["my_rating"], "genre": r["genre"] or ""} for r in rows
     ]
     store.upsert(ids, vectors, texts, metadata)
     return len(rows)
