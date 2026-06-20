@@ -5,6 +5,7 @@ import typer
 
 from gr_autopilot.config import Settings
 from gr_autopilot.ingest.csv_parser import parse_export
+from gr_autopilot.orchestrator.run import RunSummary
 from gr_autopilot.store.db import connect, init_db
 from gr_autopilot.store.repository import targets, upsert_books
 
@@ -59,17 +60,28 @@ def stop() -> None:
     typer.echo(f"Kill switch engaged: {stop_file}")
 
 
-@app.command()
-def review(*, dry_run: bool = True, limit: int | None = None) -> None:
-    """Generate reviews for unreviewed books (and post them unless --no-dry-run is set)."""
-    from gr_autopilot.orchestrator.pipeline import run_review
-
-    summary = run_review(dry_run=dry_run, limit=limit)
+def _echo_summary(summary: RunSummary) -> None:
     mode = "dry_run" if summary.dry_run else "live"
     typer.echo(
         f"run={summary.run_id} mode={mode} planned={summary.planned} "
         f"done={summary.done} failed={summary.failed}"
     )
+
+
+@app.command()
+def review(*, dry_run: bool = True, limit: int | None = None) -> None:
+    """Generate reviews for unreviewed books (and post them unless --no-dry-run is set)."""
+    from gr_autopilot.orchestrator.pipeline import run_pipeline
+
+    _echo_summary(run_pipeline(dry_run=dry_run, limit=limit, enrich=False))
+
+
+@app.command()
+def run(*, dry_run: bool = True, limit: int | None = None, enrich: bool = True) -> None:
+    """Full pipeline: enrich genres -> build voice index -> generate & post reviews."""
+    from gr_autopilot.orchestrator.pipeline import run_pipeline
+
+    _echo_summary(run_pipeline(dry_run=dry_run, limit=limit, enrich=enrich))
 
 
 if __name__ == "__main__":

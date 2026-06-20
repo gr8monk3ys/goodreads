@@ -6,9 +6,13 @@ from dataclasses import dataclass
 
 from gr_autopilot.actions.core import GoodreadsBackend, Throttle
 from gr_autopilot.actions.executor import ActionExecutor
+from gr_autopilot.catalog.enrich import enrich_genres
+from gr_autopilot.catalog.protocols import Catalog
 from gr_autopilot.config import Settings
 from gr_autopilot.generate.prompt import TargetBook
 from gr_autopilot.store.repository import finish_run, start_run, targets
+from gr_autopilot.voice.index import build_index
+from gr_autopilot.voice.protocols import Embedder, VectorStore
 
 
 @dataclass(frozen=True)
@@ -64,3 +68,22 @@ def review_unreviewed(
 
     finish_run(conn, run_id, planned, done, failed)
     return RunSummary(run_id=run_id, planned=planned, done=done, failed=failed, dry_run=dry_run)
+
+
+def prepare_corpus(
+    conn: sqlite3.Connection,
+    *,
+    embedder: Embedder,
+    store: VectorStore,
+    catalog: Catalog | None = None,
+    enrich_limit: int | None = None,
+) -> tuple[int, int]:
+    """Optionally enrich genres, then (re)build the voice index.
+
+    Returns (books_enriched, reviews_indexed). Pass catalog=None to skip enrichment
+    (e.g. for an offline run). Genres enriched here flow into the index metadata so
+    retrieval can filter by genre.
+    """
+    enriched = enrich_genres(conn, catalog, limit=enrich_limit) if catalog is not None else 0
+    indexed = build_index(conn, embedder, store)
+    return enriched, indexed
