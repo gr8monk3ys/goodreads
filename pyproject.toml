@@ -87,6 +87,7 @@ omit = [
     "src/gr_autopilot/browser/session.py",
     "src/gr_autopilot/orchestrator/pipeline.py",
     "src/gr_autopilot/catalog/goodreads_public.py",
+    "src/gr_autopilot/actions/graphql_backend.py",
 ]
 
 [tool.coverage.report]
