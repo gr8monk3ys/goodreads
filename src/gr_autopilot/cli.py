@@ -82,6 +82,40 @@ def insights(
 
 
 @app.command()
+def curate(*, top: int = 20) -> None:
+    """Concrete curation plan: TBR triage, shelf taxonomy, hygiene worklists. Read-only."""
+    from gr_autopilot.curate import hygiene, shelf_plan, tbr_triage
+    from gr_autopilot.insights.load import load_facts
+
+    settings = Settings()
+    conn = _open_db(settings)
+    facts = load_facts(conn)
+    if not facts:
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        return
+
+    h = hygiene(facts)
+    triaged = tbr_triage(facts, top=top)
+    shelves = shelf_plan(facts)
+
+    typer.echo("# 🧹 Curation plan\n")
+    typer.echo(f"## Read next — to-read ranked by author affinity (top {top})")
+    for t in triaged:
+        typer.echo(f"  - {t.book.title} — {t.book.author}  ({t.reason})")
+
+    typer.echo("\n## Proposed shelves (custom shelves to create)")
+    for s in shelves:
+        typer.echo(f"  - {s.name} [{s.kind}] — {s.book_count} books")
+
+    typer.echo("\n## Data hygiene")
+    typer.echo(f"  {len(h.unrated_reads)} unrated reads · {len(h.undated_reads)} undated reads")
+    for b in h.unrated_reads[:top]:
+        typer.echo(f"  - rate: {b.title} — {b.author}")
+    for b in h.undated_reads[:top]:
+        typer.echo(f"  - date: {b.title} — {b.author}")
+
+
+@app.command()
 def drafts() -> None:
     """Show review-draft status and the worklist still needing drafts. Never posts."""
     from gr_autopilot.drafts.studio import pending_target_rows, status_counts

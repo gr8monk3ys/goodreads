@@ -42,16 +42,34 @@ Each is spec → plan → TDD build → run → commit. Status: ☐ todo · ◐ 
   unrated reads; draft 60 missing reviews (42 ready); 26 stacked authors → shelves;
   backfill 42 missing Date Reads.
 
-- **SP2 — Draft-review studio** ☐
-  Generate review drafts (Claude RAG in the user's voice, prompt-cached) for the 60
-  unreviewed reads. Output: editable Markdown drafts in `drafts/reviews/` with a status
-  header (draft → approved). **Never posts.** A review is "done" only when the user marks
-  it approved after editing. Needs `generate`+`voice` extras + `ANTHROPIC_API_KEY`.
+- **SP2 — Draft-review studio** ☑ DONE (studio built; 42 drafts generated, awaiting user edits)
+  Studio shipped: `drafts/format.py` + `drafts/studio.py` + `gr drafts`, editable Markdown
+  with draft→approved + never-post guard, skip-existing (never clobbers edits). 42 pending
+  targets (read+rated, no review). **6 calibration drafts hand-authored** in the user's voice
+  (idea-first, the "if X can A, it can just as well B" dialectic used sparingly, rhetorical
+  questions, open endings) at `drafts/reviews/` — Notes from Underground, Siddhartha, The
+  Trial, Pride & Prejudice, Zero to One, Tao Te Ching.
+  User said "keep going" → bulk-generating the remaining 36 via a parallel `draft-reviews`
+  workflow (each agent drafts in-voice, one agent persists via the studio's skip-existing
+  writer). No API key needed — drafted in-loop. Nothing is ever posted; user edits + flips
+  status to approved. Voice profile recorded below for any regeneration pass.
 
-- **SP3 — Curation toolkit** ☐
-  Shelf taxonomy proposal (from genres + author clusters), TBR triage into priority tiers,
-  data-hygiene report (missing dates / unrated). Output: a plan the user applies (or, later
-  and only with explicit go-ahead, an optional automated write path).
+### Voice profile (for review drafting)
+Idea-first/essayistic — extracts a theme (power, autonomy, free will, conformity, society,
+assimilation) and thinks through it; almost never summarizes plot. Semi-formal winding
+sentences; reflective, a little raw, not promotional. Frequent rhetorical questions to the
+reader. Balanced, explicitly non-dogmatic socio-political lens. Signature dialectic ("if X
+can illuminate the path to honor, it can just as well cast deep shadows") — use sparingly
+(≤1 in 3). Open, slightly hopeful endings. First person; no invented biographical
+anecdotes (the user adds those). 80–130 words (45–80 for children's picture books). Match
+rating sentiment (5 loved → 2 disappointed-but-fair).
+
+- **SP3 — Curation toolkit** ☑ DONE
+  `curate.py` + `gr curate`: TBR triage ranked by author affinity (avg rating + count, so
+  loved-few beats lukewarm-many), shelf taxonomy (author clusters + era buckets), and
+  hygiene worklists (the exact 18 unrated + 42 undated reads). Read-only, TDD. On real data
+  it leads "read next" with Dostoevsky/Hesse (your 5★ authors) and proposes shelves like
+  Poe (11), Dostoevsky (7), García Márquez (6).
 
 - **SP4 — Presence pack** ☐
   "Signature" summary, featured-shelf recommendation, profile-bio draft, and a "best
@@ -75,3 +93,7 @@ Each is spec → plan → TDD build → run → commit. Status: ☐ todo · ◐ 
 - 2026-06-23 — SP1 DONE: insights layer built (metrics/suggestions/report/load + `gr
   insights` CLI), TDD, 88 tests green @ 98% cov. Found+fixed a partial-year velocity bug
   via real-data run. Next: SP2 draft-review studio.
+- 2026-06-24 — SP2 DONE: draft studio + `gr drafts`; 6 calibration drafts hand-authored,
+  36 more via a parallel `draft-reviews` workflow (37 agents) → 42 editable drafts, none
+  posted. SP3 DONE: `curate.py` + `gr curate` (affinity triage, shelf plan, hygiene). 105
+  tests green @ 98% cov. Next: SP4 presence pack.
