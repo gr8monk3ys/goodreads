@@ -155,6 +155,14 @@ def set_book_genres(conn: sqlite3.Connection, book_id: int, genres: Sequence[str
     conn.commit()
 
 
+def voice_samples(conn: sqlite3.Connection) -> list[str]:
+    """The user's existing written reviews — style exemplars for voice-matched drafting."""
+    rows = conn.execute(
+        "SELECT review_text FROM reviews WHERE is_empty = 0 ORDER BY book_id"
+    ).fetchall()
+    return [str(r["review_text"]) for r in rows]
+
+
 def book_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Every book with a has_review flag (non-empty review), for read-only analytics."""
     return conn.execute(

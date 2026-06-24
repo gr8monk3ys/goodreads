@@ -82,6 +82,28 @@ def insights(
 
 
 @app.command()
+def drafts() -> None:
+    """Show review-draft status and the worklist still needing drafts. Never posts."""
+    from gr_autopilot.drafts.studio import pending_target_rows, status_counts
+
+    settings = Settings()
+    conn = _open_db(settings)
+    counts = status_counts(settings.drafts_dir)
+    pending = pending_target_rows(conn, settings.drafts_dir, settings.require_rating)
+
+    n_draft, n_approved = counts.get("draft", 0), counts.get("approved", 0)
+    typer.echo(
+        f"drafts: {n_draft} draft · {n_approved} approved · {len(pending)} pending  "
+        f"(dir: {settings.drafts_dir})"
+    )
+    if pending:
+        typer.echo("pending (read + rated, no review yet):")
+        for r in pending:
+            stars = f"{r['my_rating']}★" if r["my_rating"] else "unrated"
+            typer.echo(f"  - [{r['book_id']}] {r['title']} — {r['author']} ({stars})")
+
+
+@app.command()
 def stop() -> None:
     """Engage the kill switch: write a STOP sentinel that halts in-flight writes."""
     settings = Settings()

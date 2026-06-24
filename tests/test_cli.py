@@ -35,6 +35,18 @@ def test_insights_empty_db_is_friendly(tmp_path: Path, monkeypatch: pytest.Monke
     assert "ingest" in result.output.lower()
 
 
+def test_drafts_status_lists_pending_targets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["drafts"])
+    assert result.exit_code == 0, result.output
+    assert "pending" in result.output.lower()
+    assert "Some Skim" in result.output  # the one read+rated+unreviewed target in the fixture
+
+
 def test_ingest_then_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "test.db"))
 

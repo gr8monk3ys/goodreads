@@ -3,7 +3,7 @@ from pathlib import Path
 
 from gr_autopilot.ingest.csv_parser import parse_export
 from gr_autopilot.store.db import init_db
-from gr_autopilot.store.repository import targets, upsert_books
+from gr_autopilot.store.repository import targets, upsert_books, voice_samples
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
 
@@ -82,3 +82,10 @@ def test_targets_include_unrated_when_disabled(conn: sqlite3.Connection) -> None
     rows = targets(conn, require_rating=False)
     # book 22 is the only read+empty-review row in the fixture
     assert [r["book_id"] for r in rows] == [22]
+
+
+def test_voice_samples_returns_only_nonempty_reviews(conn: sqlite3.Connection) -> None:
+    upsert_books(conn, parse_export(FIXTURE))
+    samples = voice_samples(conn)
+    # only Dune (book 11) carries a written review in the fixture
+    assert samples == ["Loved it.\nA masterpiece."]

@@ -12,6 +12,7 @@ build/
 data/
 *.db
 /goodreads_library_export.csv
+/drafts/
 .env
 playwright/.auth/
 *storage_state*.json
