@@ -248,8 +248,10 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
     settings = Settings()
     conn = _open_db(settings)
     all_items = parse_plan(plan_csv.read_text(encoding="utf-8"))
-    items = [it for it in all_items if not is_unfilled(it)]
-    unfilled = len(all_items) - len(items)
+    ready = [it for it in all_items if not is_unfilled(it)]
+    unfilled = len(all_items) - len(ready)
+    capped = max(0, len(ready) - settings.max_actions_per_run)  # blast-radius cap per run
+    items = ready[: settings.max_actions_per_run]
     stop_file = settings.db_path.parent / "STOP"
     run_id = start_run(conn, "dry_run" if dry_run else "live")
 
@@ -264,7 +266,8 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
         already = tally.get("skipped_idempotent", 0)
         typer.echo(
             f"apply (DRY RUN — no writes made): {len(items)} planned · "
-            f"{would} would-write · {already} already-done · {unfilled} unfilled (skipped)"
+            f"{would} would-write · {already} already-done · {unfilled} unfilled (skipped) · "
+            f"{capped} capped (raise GR_MAX_ACTIONS_PER_RUN)"
         )
         typer.echo("Review the plan, then `gr login` + re-run with --no-dry-run to write.")
         return
@@ -285,7 +288,8 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
     finish_run(conn, run_id, len(items), live.get("done", 0), live.get("failed", 0))
     typer.echo(
         f"apply (LIVE): {live.get('done', 0)} done · {live.get('failed', 0)} failed · "
-        f"{live.get('skipped_idempotent', 0)} already-done. `gr stop` halts mid-run."
+        f"{live.get('skipped_idempotent', 0)} already-done · {capped} capped this run. "
+        "`gr stop` halts mid-run; re-run to continue past the cap."
     )
 
 

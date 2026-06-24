@@ -86,6 +86,20 @@ def test_apply_skips_unfilled_rating_rows(
     assert "1 planned" in result.output  # only the filled row is actionable
 
 
+def test_apply_respects_max_actions_cap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    monkeypatch.setenv("GR_MAX_ACTIONS_PER_RUN", "1")  # blast-radius cap
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    plan = tmp_path / "plan.csv"
+    plan.write_text("action,book_id,value\nset_shelf,11,classics\nset_shelf,22,classics\n")
+    result = runner.invoke(app, ["apply", str(plan)])
+    assert result.exit_code == 0, result.output
+    assert "1 planned" in result.output  # only 1 of 2 within the cap
+    assert "capped" in result.output.lower()
+
+
 def test_apply_rejects_review_and_social_actions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
