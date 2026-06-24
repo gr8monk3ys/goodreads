@@ -26,6 +26,17 @@ def norm_review(raw: str | None) -> str:
     return html.unescape(text).strip()
 
 
+def coerce_int(raw: str | None) -> int | None:
+    """Tolerant int from a Goodreads cell. '', None, or non-numeric -> None; floats truncate."""
+    s = (raw or "").strip()
+    if not s:
+        return None
+    try:
+        return int(float(s))
+    except ValueError:
+        return None
+
+
 @dataclass(frozen=True)
 class BookRecord:
     book_id: int
@@ -42,6 +53,8 @@ class BookRecord:
     review_text: str
     has_spoiler: bool
     shelves: tuple[str, ...]
+    num_pages: int | None
+    original_pub_year: int | None
 
 
 def _row_to_record(row: dict[str, str]) -> BookRecord:
@@ -63,6 +76,11 @@ def _row_to_record(row: dict[str, str]) -> BookRecord:
         review_text=norm_review(review_html),
         has_spoiler=(row.get("Spoiler") or "").strip().lower() == "true",
         shelves=shelves,
+        num_pages=coerce_int(row.get("Number of Pages")),
+        original_pub_year=(
+            coerce_int(row.get("Original Publication Year"))
+            or coerce_int(row.get("Year Published"))
+        ),
     )
 
 

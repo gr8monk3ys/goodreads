@@ -12,14 +12,17 @@ def upsert_books(conn: sqlite3.Connection, records: Sequence[BookRecord]) -> int
         conn.execute(
             """
             INSERT INTO books (book_id, title, author, isbn, isbn13, my_rating,
-                               avg_rating, exclusive_shelf, date_read, date_added)
+                               avg_rating, exclusive_shelf, date_read, date_added,
+                               num_pages, original_pub_year)
             VALUES (:book_id, :title, :author, :isbn, :isbn13, :my_rating,
-                    :avg_rating, :exclusive_shelf, :date_read, :date_added)
+                    :avg_rating, :exclusive_shelf, :date_read, :date_added,
+                    :num_pages, :original_pub_year)
             ON CONFLICT(book_id) DO UPDATE SET
                 title=excluded.title, author=excluded.author, isbn=excluded.isbn,
                 isbn13=excluded.isbn13, my_rating=excluded.my_rating,
                 avg_rating=excluded.avg_rating, exclusive_shelf=excluded.exclusive_shelf,
-                date_read=excluded.date_read, date_added=excluded.date_added
+                date_read=excluded.date_read, date_added=excluded.date_added,
+                num_pages=excluded.num_pages, original_pub_year=excluded.original_pub_year
             """,
             {
                 "book_id": r.book_id,
@@ -32,6 +35,8 @@ def upsert_books(conn: sqlite3.Connection, records: Sequence[BookRecord]) -> int
                 "exclusive_shelf": r.exclusive_shelf,
                 "date_read": r.date_read,
                 "date_added": r.date_added,
+                "num_pages": r.num_pages,
+                "original_pub_year": r.original_pub_year,
             },
         )
         conn.execute(

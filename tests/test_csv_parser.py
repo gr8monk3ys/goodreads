@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from gr_autopilot.ingest.csv_parser import clean_isbn, norm_review, parse_export
+from gr_autopilot.ingest.csv_parser import clean_isbn, coerce_int, norm_review, parse_export
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
 
@@ -34,9 +34,25 @@ def test_norm_review_unescapes_entities() -> None:
     assert norm_review("Tom &amp; Jerry rule") == "Tom & Jerry rule"
 
 
+def test_coerce_int_handles_blanks_floats_and_text() -> None:
+    assert coerce_int("412") == 412
+    assert coerce_int("1999.0") == 1999  # Goodreads sometimes emits floats
+    assert coerce_int("") is None
+    assert coerce_int(None) is None
+    assert coerce_int("n/a") is None  # non-numeric -> None, never raises
+
+
 def test_parse_export_reads_all_rows() -> None:
     records = parse_export(FIXTURE)
     assert len(records) == 3
+
+
+def test_parse_export_pages_and_pub_year() -> None:
+    by_id = {r.book_id: r for r in parse_export(FIXTURE)}
+    dune = by_id[11]
+    assert dune.num_pages == 412
+    # prefers "Original Publication Year" (1965) over "Year Published" (1990)
+    assert dune.original_pub_year == 1965
 
 
 def test_parse_export_fields_and_quirks() -> None:

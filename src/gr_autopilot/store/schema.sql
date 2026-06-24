@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS books (
     avg_rating      REAL,
     exclusive_shelf TEXT,
     date_read       TEXT,
-    date_added      TEXT
+    date_added      TEXT,
+    num_pages         INTEGER,
+    original_pub_year INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS reviews (

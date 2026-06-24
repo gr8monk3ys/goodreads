@@ -2,9 +2,19 @@ import sqlite3
 from pathlib import Path
 
 from gr_autopilot.ingest.csv_parser import parse_export
+from gr_autopilot.store.db import init_db
 from gr_autopilot.store.repository import targets, upsert_books
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
+
+# The pre-migration books schema (10 columns, no num_pages/original_pub_year).
+_LEGACY_BOOKS = """
+CREATE TABLE books (
+    book_id INTEGER PRIMARY KEY, title TEXT NOT NULL, author TEXT, isbn TEXT,
+    isbn13 TEXT, my_rating INTEGER DEFAULT 0, avg_rating REAL,
+    exclusive_shelf TEXT, date_read TEXT, date_added TEXT
+)
+"""
 
 
 def test_init_db_creates_tables(conn: sqlite3.Connection) -> None:
@@ -32,6 +42,26 @@ def test_upsert_is_idempotent(conn: sqlite3.Connection) -> None:
     assert conn.execute("SELECT COUNT(*) FROM reviews").fetchone()[0] == 3
     # 'sci-fi','favorites','fantasy','to-read' = 4 distinct shelves
     assert conn.execute("SELECT COUNT(*) FROM shelves").fetchone()[0] == 4
+
+
+def test_upsert_persists_pages_and_pub_year(conn: sqlite3.Connection) -> None:
+    upsert_books(conn, parse_export(FIXTURE))
+    row = conn.execute(
+        "SELECT num_pages, original_pub_year FROM books WHERE book_id = 11"
+    ).fetchone()
+    assert row["num_pages"] == 412
+    assert row["original_pub_year"] == 1965
+
+
+def test_init_db_migrates_legacy_books_table() -> None:
+    c = sqlite3.connect(":memory:")
+    c.row_factory = sqlite3.Row
+    c.executescript(_LEGACY_BOOKS)  # simulate a DB created before the new columns
+    init_db(c)  # must add the two columns idempotently, no error
+    init_db(c)  # second run proves idempotency
+    cols = {r["name"] for r in c.execute("PRAGMA table_info(books)")}
+    assert {"num_pages", "original_pub_year"} <= cols
+    c.close()
 
 
 def test_upsert_updates_review_text(conn: sqlite3.Connection) -> None:
