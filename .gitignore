@@ -11,6 +11,7 @@ build/
 *.egg-info/
 data/
 *.db
+/goodreads_library_export.csv
 .env
 playwright/.auth/
 *storage_state*.json
