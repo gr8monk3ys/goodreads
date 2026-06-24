@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import sqlite3
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 
@@ -8,6 +11,11 @@ from gr_autopilot.ingest.csv_parser import parse_export
 from gr_autopilot.orchestrator.run import RunSummary
 from gr_autopilot.store.db import connect, init_db
 from gr_autopilot.store.repository import targets, upsert_books
+
+if TYPE_CHECKING:
+    from gr_autopilot.actions.core import ActionResult
+    from gr_autopilot.actions.executor import ActionExecutor
+    from gr_autopilot.actions.plan import PlanItem
 
 app = typer.Typer(help="goodreads-autopilot CLI")
 
@@ -209,6 +217,85 @@ def drafts() -> None:
         for r in pending:
             stars = f"{r['my_rating']}★" if r["my_rating"] else "unrated"
             typer.echo(f"  - [{r['book_id']}] {r['title']} — {r['author']} ({stars})")
+
+
+def _dispatch_write(executor: ActionExecutor, item: PlanItem) -> ActionResult:
+    if item.action == "ensure_shelf":
+        return executor.ensure_shelf(item.value)
+    if item.book_id is None:
+        raise ValueError(f"{item.action} requires a book_id")
+    if item.action == "set_rating":
+        return executor.set_rating(item.book_id, int(item.value))
+    if item.action == "set_date":
+        return executor.set_date(item.book_id, item.value)
+    return executor.set_shelf(item.book_id, item.value)
+
+
+@app.command()
+def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
+    """Apply a write-plan CSV (ratings/dates/shelves) to your account. DRY-RUN by default.
+
+    Reviews and social actions are never applyable here. Live writes (--no-dry-run) need the
+    browser extra and a prior `gr login`, and carry account-suspension risk.
+    """
+    from collections import Counter
+
+    from gr_autopilot.actions.core import NullBackend, Throttle
+    from gr_autopilot.actions.executor import ActionExecutor
+    from gr_autopilot.actions.plan import is_unfilled, parse_plan
+    from gr_autopilot.store.repository import finish_run, start_run
+
+    settings = Settings()
+    conn = _open_db(settings)
+    all_items = parse_plan(plan_csv.read_text(encoding="utf-8"))
+    items = [it for it in all_items if not is_unfilled(it)]
+    unfilled = len(all_items) - len(items)
+    stop_file = settings.db_path.parent / "STOP"
+    run_id = start_run(conn, "dry_run" if dry_run else "live")
+
+    if dry_run:
+        ex = ActionExecutor(
+            conn, NullBackend(), run_id=run_id, settings=settings,
+            throttle=Throttle(sleeper=lambda _: None), dry_run=True, stop_file=stop_file,
+        )
+        tally: Counter[str] = Counter(_dispatch_write(ex, it).status for it in items)
+        finish_run(conn, run_id, len(items), 0, tally.get("failed", 0))
+        would = tally.get("dry_run", 0)
+        already = tally.get("skipped_idempotent", 0)
+        typer.echo(
+            f"apply (DRY RUN — no writes made): {len(items)} planned · "
+            f"{would} would-write · {already} already-done · {unfilled} unfilled (skipped)"
+        )
+        typer.echo("Review the plan, then `gr login` + re-run with --no-dry-run to write.")
+        return
+
+    from gr_autopilot.actions.graphql_backend import GoodreadsGraphQLBackend
+    from gr_autopilot.browser.session import authed_page, is_logged_in
+
+    with authed_page() as page:
+        if not is_logged_in(page):
+            typer.echo("Not logged in — run `gr login` first (saves your browser session).")
+            raise typer.Exit(1)
+        ex = ActionExecutor(
+            conn, GoodreadsGraphQLBackend(page), run_id=run_id, settings=settings,
+            throttle=Throttle(), dry_run=False, stop_file=stop_file,
+        )
+        results = [_dispatch_write(ex, it) for it in items]
+    live: Counter[str] = Counter(r.status for r in results)
+    finish_run(conn, run_id, len(items), live.get("done", 0), live.get("failed", 0))
+    typer.echo(
+        f"apply (LIVE): {live.get('done', 0)} done · {live.get('failed', 0)} failed · "
+        f"{live.get('skipped_idempotent', 0)} already-done. `gr stop` halts mid-run."
+    )
+
+
+@app.command()
+def login() -> None:
+    """One-time interactive Goodreads login; saves your browser session for live writes."""
+    from gr_autopilot.browser.session import login as do_login
+
+    do_login()
+    typer.echo("Saved session. You can now `gr apply <plan.csv> --no-dry-run`.")
 
 
 @app.command()

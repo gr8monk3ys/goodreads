@@ -49,6 +49,10 @@ class GoodreadsBackend(Protocol):
 
     def set_shelf(self, book_id: int, shelf: str) -> None: ...
 
+    def set_rating(self, book_id: int, rating: int) -> None: ...
+
+    def set_date(self, book_id: int, date_read: str) -> None: ...
+
     def ensure_shelf(self, name: str, *, exclusive: bool) -> None: ...
 
     def add_to_list(self, list_id: str, book_id: int) -> None: ...
@@ -61,6 +65,12 @@ class NullBackend:
         return None
 
     def set_shelf(self, book_id: int, shelf: str) -> None:
+        return None
+
+    def set_rating(self, book_id: int, rating: int) -> None:
+        return None
+
+    def set_date(self, book_id: int, date_read: str) -> None:
         return None
 
     def ensure_shelf(self, name: str, *, exclusive: bool) -> None:

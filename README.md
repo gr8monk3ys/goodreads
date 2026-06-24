@@ -24,7 +24,7 @@ drafts   targets      -> editable review drafts          (never posts; draft -> 
 presence store        -> reading signature + bio + reviews (read-only; profile pack)
 browser  one-time login -> saved Playwright session  (storage_state + stealth)
 actions  draft/shelf  -> Goodreads writes            (kill switch + idempotency + throttle)
-orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | insights | curate | presence | plan | drafts | review | run | stop | status)
+orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | insights | curate | presence | plan | drafts | login | apply | review | run | stop | status)
 ```
 
 Each layer sits behind a typed interface, so the risky browser layer is quarantined and
@@ -42,7 +42,9 @@ everything above it is pure local data work — unit-tested without ever touchin
 | drafts — human-in-the-loop review studio, never auto-posts (`gr drafts`) | ✅ built & green |
 | presence — reading signature + bio drafts + reviews to feature (`gr presence`) | ✅ built & green |
 | actions safety spine · orchestrator · CLI (`stop`/`review`/`enrich`) | ✅ built & green (48 tests, ~97% coverage) |
-| **Playwright write backend** | ⏳ needs your one-time [live capture](docs/superpowers/research/write-flows-capture-runbook.md) |
+| write spine — `set_rating`/`set_date`/`set_shelf` behind kill-switch/dry-run/idempotency/throttle | ✅ built & green |
+| `gr apply` (dry-run-first plan executor) + `gr login` | ✅ built & green |
+| live shelf-add (AppSync GraphQL, verified) · rating/date/create-shelf mutations | ✅ shelf · ⏳ need [live capture](docs/superpowers/research/write-flows-capture-runbook.md) |
 | Scheduled `automation.yml` + self-hosted residential runner | ⏳ planned |
 
 ## Install

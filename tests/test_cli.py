@@ -60,6 +60,43 @@ def test_presence_reports_pack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "Dune" in result.output  # the 5★ read with a review -> canon + best review
 
 
+def test_apply_dry_run_previews_without_writing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    plan = tmp_path / "plan.csv"
+    plan.write_text("action,book_id,value\nset_rating,11,5\nensure_shelf,,existential-classics\n")
+    result = runner.invoke(app, ["apply", str(plan)])
+    assert result.exit_code == 0, result.output
+    assert "DRY RUN" in result.output
+    assert "2 planned" in result.output
+
+
+def test_apply_skips_unfilled_rating_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    plan = tmp_path / "plan.csv"
+    plan.write_text("action,book_id,value\nset_rating,11,\nset_rating,22,4\n")  # one blank
+    result = runner.invoke(app, ["apply", str(plan)])
+    assert result.exit_code == 0, result.output
+    assert "unfilled" in result.output.lower()
+    assert "1 planned" in result.output  # only the filled row is actionable
+
+
+def test_apply_rejects_review_and_social_actions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    plan = tmp_path / "bad.csv"
+    plan.write_text("post_review,11,great\n")  # reviews are never applyable
+    result = runner.invoke(app, ["apply", str(plan)])
+    assert result.exit_code != 0  # parse_plan rejects it
+
+
 def test_plan_aggregates_all_layers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts"))

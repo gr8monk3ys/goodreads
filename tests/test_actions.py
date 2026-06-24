@@ -20,6 +20,12 @@ class RecordingBackend:
     def set_shelf(self, book_id: int, shelf: str) -> None:
         self.calls.append(("set_shelf", (book_id, shelf)))
 
+    def set_rating(self, book_id: int, rating: int) -> None:
+        self.calls.append(("set_rating", (book_id, rating)))
+
+    def set_date(self, book_id: int, date_read: str) -> None:
+        self.calls.append(("set_date", (book_id, date_read)))
+
     def ensure_shelf(self, name: str, *, exclusive: bool) -> None:
         self.calls.append(("ensure_shelf", (name, exclusive)))
 
@@ -102,3 +108,41 @@ def test_failed_backend_logs_failed(conn: sqlite3.Connection) -> None:
     res = _executor(conn, backend, dry_run=False).post_review(11, "great book", 5)
     assert res.status == "failed"
     assert "boom" in res.detail
+
+
+def test_set_rating_live_calls_backend(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    res = _executor(conn, backend, dry_run=False).set_rating(11, 5)
+    assert res.status == "done"
+    assert backend.calls[0] == ("set_rating", (11, 5))
+
+
+def test_set_rating_dry_run_does_not_write(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    res = _executor(conn, backend, dry_run=True).set_rating(11, 5)
+    assert res.status == "dry_run"
+    assert backend.calls == []
+
+
+def test_set_rating_is_idempotent(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    ex = _executor(conn, backend, dry_run=False)
+    ex.set_rating(11, 5)
+    res2 = ex.set_rating(11, 5)
+    assert res2.status == "skipped_idempotent"
+    assert len(backend.calls) == 1
+
+
+def test_set_date_live_calls_backend(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    res = _executor(conn, backend, dry_run=False).set_date(11, "2024/03/01")
+    assert res.status == "done"
+    assert backend.calls[0] == ("set_date", (11, "2024/03/01"))
+
+
+def test_set_date_kill_switch_blocks(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    ex = _executor(conn, backend, dry_run=False, settings=Settings(disable_writes=True))
+    res = ex.set_date(11, "2024/03/01")
+    assert res.status == "failed"
+    assert backend.calls == []

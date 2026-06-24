@@ -28,6 +28,12 @@ class PlaywrightBackend:
     def set_shelf(self, book_id: int, shelf: str) -> None:
         raise NotImplementedError("set_shelf: confirm /shelf/add_to_shelf.json 2026 contract first")
 
+    def set_rating(self, book_id: int, rating: int) -> None:
+        raise NotImplementedError("set_rating: capture the star-rating write contract first")
+
+    def set_date(self, book_id: int, date_read: str) -> None:
+        raise NotImplementedError("set_date: capture the date-read editor contract first")
+
     def ensure_shelf(self, name: str, *, exclusive: bool) -> None:
         raise NotImplementedError("ensure_shelf: capture the create-shelf control first")
 

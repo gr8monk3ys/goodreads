@@ -78,8 +78,14 @@ rating sentiment (5 loved → 2 disappointed-but-fair).
   (`existential-classics`), and the user's-part checklist. Signature authors fixed to rank
   by taste not volume (Dostoevsky/Hesse/Frankl lead, not Dr. Seuss). TDD.
 
-- **SP5 — Write-back (OPTIONAL, gated, risky)** ☐
-  The Playwright path to actually apply *approved, non-review* changes (ratings, shelves,
+- **SP5 — Write-back (OPTIONAL, gated, risky)** ◐ USER-AUTHORIZED 2026-06-24
+  Spine extended with `set_rating`/`set_date` through the safety executor (kill-switch,
+  dry-run default, idempotency, throttle, audit). `gr apply` (dry-run-first plan executor,
+  allow-lists ratings/dates/shelves only — rejects reviews/social) + `gr login`. Live
+  shelf-add works (verified AppSync GraphQL); rating/date/create-shelf mutations raise a
+  clear error pending one-time live capture from the user's session. Runbook +
+  `data/write-plan.csv` generated. 122 tests green. Reviews still never applyable here.
+  ORIGINAL: The Playwright path to actually apply *approved, non-review* changes (ratings, shelves,
   dates) under the existing kill-switch/dry-run/throttle. Requires explicit user go-ahead
   and a one-time login capture. Reviews are excluded by user's human-in-the-loop rule.
 

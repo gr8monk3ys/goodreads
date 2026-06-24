@@ -49,6 +49,12 @@ class GoodreadsGraphQLBackend:
         jwt, gid = self._jwt_and_gid(book_id)
         self._post(jwt, build_shelve_request(gid, shelf))
 
+    def set_rating(self, book_id: int, rating: int) -> None:
+        raise NotImplementedError("rating mutation not yet captured (see capture runbook)")
+
+    def set_date(self, book_id: int, date_read: str) -> None:
+        raise NotImplementedError("date-read mutation not yet captured (see capture runbook)")
+
     def post_review(self, book_id: int, text: str, rating: int) -> None:
         raise NotImplementedError("review mutation not yet captured")
 

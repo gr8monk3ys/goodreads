@@ -110,6 +110,19 @@ class ActionExecutor:
             "set_shelf", book_id, {"shelf": shelf}, lambda b: b.set_shelf(book_id, shelf)
         )
 
+    def set_rating(self, book_id: int, rating: int) -> ActionResult:
+        return self._guarded(
+            "set_rating", book_id, {"rating": rating}, lambda b: b.set_rating(book_id, rating)
+        )
+
+    def set_date(self, book_id: int, date_read: str) -> ActionResult:
+        return self._guarded(
+            "set_date",
+            book_id,
+            {"date_read": date_read},
+            lambda b: b.set_date(book_id, date_read),
+        )
+
     def want_to_read(self, book_id: int) -> ActionResult:
         return self.set_shelf(book_id, "to-read")
 
