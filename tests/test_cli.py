@@ -60,6 +60,17 @@ def test_presence_reports_pack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "Dune" in result.output  # the 5★ read with a review -> canon + best review
 
 
+def test_plan_aggregates_all_layers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["plan"])
+    assert result.exit_code == 0, result.output
+    assert "Read next" in result.output  # curate layer
+    assert "On The Pile" in result.output  # the to-read book
+    assert "Drafts" in result.output  # drafts layer
+
+
 def test_drafts_status_lists_pending_targets(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

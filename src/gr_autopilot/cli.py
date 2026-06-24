@@ -82,6 +82,48 @@ def insights(
 
 
 @app.command()
+def plan(*, top: int = 5) -> None:
+    """One consolidated path to a stronger profile: priorities, read-next, gaps, signature."""
+    from gr_autopilot.curate import hygiene, tbr_triage
+    from gr_autopilot.drafts.studio import status_counts
+    from gr_autopilot.insights.load import load_facts
+    from gr_autopilot.insights.metrics import compute
+    from gr_autopilot.insights.suggestions import suggest
+    from gr_autopilot.presence import signature
+
+    settings = Settings()
+    conn = _open_db(settings)
+    facts = load_facts(conn)
+    if not facts:
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        return
+
+    metrics = compute(facts)
+    typer.echo("# 🎯 Path to a stronger Goodreads profile\n")
+
+    typer.echo("## Do these, highest impact first")
+    for s in suggest(metrics, top=top):
+        typer.echo(f"  [{s.impact:>6}] {s.title}")
+
+    typer.echo("\n## Read next (you loved these authors)")
+    for t in tbr_triage(facts, top=top):
+        typer.echo(f"  - {t.book.title} — {t.book.author}  ({t.reason})")
+
+    h = hygiene(facts)
+    counts = status_counts(settings.drafts_dir)
+    typer.echo(
+        f"\n## Quick wins: rate {len(h.unrated_reads)} · date {len(h.undated_reads)} · "
+        f"Drafts {counts.get('draft', 0)} to edit, {counts.get('approved', 0)} approved"
+    )
+
+    sig = signature(facts)
+    if sig.five_star_titles:
+        typer.echo("\n## Your signature: " + ", ".join(sig.five_star_titles[:top]))
+
+    typer.echo("\nDetail: gr insights · gr curate · gr presence · gr drafts")
+
+
+@app.command()
 def curate(*, top: int = 20) -> None:
     """Concrete curation plan: TBR triage, shelf taxonomy, hygiene worklists. Read-only."""
     from gr_autopilot.curate import hygiene, shelf_plan, tbr_triage

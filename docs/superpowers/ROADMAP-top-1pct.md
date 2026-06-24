@@ -102,5 +102,9 @@ rating sentiment (5 loved → 2 disappointed-but-fair).
   tests green @ 98% cov.
 - 2026-06-24 — SP4 DONE: `presence.py` + `gr presence` + `data/presence-pack.md` (bio
   drafts, featured shelf, best reviews). BookFact gained review_text; signature authors
-  rank by taste. 109 tests green @ 98% cov. Remaining: SP5 (optional/gated writes) — only
-  with explicit user go-ahead.
+  rank by taste. 109 tests green @ 98% cov.
+- 2026-06-24 — Milestone: all safe automation done. User chose "keep improving safely" +
+  "merge to main" (declined SP5 risky writes). Added `gr plan` (consolidated view), ran
+  live genre enrichment (~37 books), dispatched a draft quality-pass
+  (`data/draft-quality-report.md`). 110 tests green. Branch fast-forward merged into main.
+  SP5 remains available only on explicit future go-ahead.

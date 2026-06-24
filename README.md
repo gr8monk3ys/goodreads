@@ -24,7 +24,7 @@ drafts   targets      -> editable review drafts          (never posts; draft -> 
 presence store        -> reading signature + bio + reviews (read-only; profile pack)
 browser  one-time login -> saved Playwright session  (storage_state + stealth)
 actions  draft/shelf  -> Goodreads writes            (kill switch + idempotency + throttle)
-orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | insights | curate | presence | drafts | review | run | stop | status)
+orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | insights | curate | presence | plan | drafts | review | run | stop | status)
 ```
 
 Each layer sits behind a typed interface, so the risky browser layer is quarantined and
