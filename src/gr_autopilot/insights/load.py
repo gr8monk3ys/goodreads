@@ -30,6 +30,7 @@ def load_facts(conn: sqlite3.Connection) -> list[BookFact]:
                 num_pages=row["num_pages"],
                 original_pub_year=row["original_pub_year"],
                 has_review=bool(row["has_review"]),
+                review_text=row["review_text"] or "",
                 genres=genres.get(book_id, ()),
             )
         )

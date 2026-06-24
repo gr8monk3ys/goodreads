@@ -21,9 +21,10 @@ catalog  book id      -> public genres / metadata     (no auth; __NEXT_DATA__ re
 insights store        -> analytics + suggested moves  (read-only; metrics/suggestions/report)
 curate   store        -> shelf / triage / hygiene plans (read-only; actionable per-book)
 drafts   targets      -> editable review drafts          (never posts; draft -> approved)
+presence store        -> reading signature + bio + reviews (read-only; profile pack)
 browser  one-time login -> saved Playwright session  (storage_state + stealth)
 actions  draft/shelf  -> Goodreads writes            (kill switch + idempotency + throttle)
-orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | insights | curate | drafts | review | run | stop | status)
+orchestrator + cli     -> end-to-end workflows        (gr ingest | enrich | insights | curate | presence | drafts | review | run | stop | status)
 ```
 
 Each layer sits behind a typed interface, so the risky browser layer is quarantined and
@@ -39,6 +40,7 @@ everything above it is pure local data work — unit-tested without ever touchin
 | insights — read-only analytics + suggested moves (`gr insights`) | ✅ built & green |
 | curate — TBR triage / shelf taxonomy / hygiene worklists (`gr curate`) | ✅ built & green |
 | drafts — human-in-the-loop review studio, never auto-posts (`gr drafts`) | ✅ built & green |
+| presence — reading signature + bio drafts + reviews to feature (`gr presence`) | ✅ built & green |
 | actions safety spine · orchestrator · CLI (`stop`/`review`/`enrich`) | ✅ built & green (48 tests, ~97% coverage) |
 | **Playwright write backend** | ⏳ needs your one-time [live capture](docs/superpowers/research/write-flows-capture-runbook.md) |
 | Scheduled `automation.yml` + self-hosted residential runner | ⏳ planned |

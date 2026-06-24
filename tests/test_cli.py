@@ -51,6 +51,15 @@ def test_curate_empty_db_is_friendly(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert "ingest" in result.output.lower()
 
 
+def test_presence_reports_pack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["presence"])
+    assert result.exit_code == 0, result.output
+    assert "signature" in result.output.lower()
+    assert "Dune" in result.output  # the 5★ read with a review -> canon + best review
+
+
 def test_drafts_status_lists_pending_targets(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

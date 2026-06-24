@@ -47,6 +47,7 @@ class BookFact:
     num_pages: int | None = None
     original_pub_year: int | None = None
     has_review: bool = False
+    review_text: str = ""
     genres: tuple[str, ...] = ()
 
 

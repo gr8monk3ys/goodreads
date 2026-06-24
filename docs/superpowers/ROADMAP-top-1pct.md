@@ -71,9 +71,12 @@ rating sentiment (5 loved → 2 disappointed-but-fair).
   it leads "read next" with Dostoevsky/Hesse (your 5★ authors) and proposes shelves like
   Poe (11), Dostoevsky (7), García Márquez (6).
 
-- **SP4 — Presence pack** ☐
-  "Signature" summary, featured-shelf recommendation, profile-bio draft, and a "best
-  reviews to feature" selection. Markdown the user can paste into their profile.
+- **SP4 — Presence pack** ☑ DONE
+  `presence.py` + `gr presence`: reading signature (5★ canon, taste-ranked signature
+  authors, eras, genres) + best existing reviews to feature. Plus a hand-authored
+  `data/presence-pack.md` (git-ignored): 3 bio drafts, a featured-shelf recommendation
+  (`existential-classics`), and the user's-part checklist. Signature authors fixed to rank
+  by taste not volume (Dostoevsky/Hesse/Frankl lead, not Dr. Seuss). TDD.
 
 - **SP5 — Write-back (OPTIONAL, gated, risky)** ☐
   The Playwright path to actually apply *approved, non-review* changes (ratings, shelves,
@@ -96,4 +99,8 @@ rating sentiment (5 loved → 2 disappointed-but-fair).
 - 2026-06-24 — SP2 DONE: draft studio + `gr drafts`; 6 calibration drafts hand-authored,
   36 more via a parallel `draft-reviews` workflow (37 agents) → 42 editable drafts, none
   posted. SP3 DONE: `curate.py` + `gr curate` (affinity triage, shelf plan, hygiene). 105
-  tests green @ 98% cov. Next: SP4 presence pack.
+  tests green @ 98% cov.
+- 2026-06-24 — SP4 DONE: `presence.py` + `gr presence` + `data/presence-pack.md` (bio
+  drafts, featured shelf, best reviews). BookFact gained review_text; signature authors
+  rank by taste. 109 tests green @ 98% cov. Remaining: SP5 (optional/gated writes) — only
+  with explicit user go-ahead.

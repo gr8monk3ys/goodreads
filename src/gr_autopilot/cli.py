@@ -116,6 +116,38 @@ def curate(*, top: int = 20) -> None:
 
 
 @app.command()
+def presence(*, top: int = 5) -> None:
+    """Profile-presence pack: your reading signature + best reviews to feature. Read-only."""
+    from gr_autopilot.insights.load import load_facts
+    from gr_autopilot.presence import best_reviews, signature
+
+    settings = Settings()
+    conn = _open_db(settings)
+    facts = load_facts(conn)
+    if not facts:
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        return
+
+    sig = signature(facts)
+    typer.echo("# ✨ Profile presence pack\n")
+    typer.echo("## Your reading signature")
+    if sig.five_star_titles:
+        typer.echo("- 5★ canon: " + ", ".join(sig.five_star_titles))
+    if sig.top_authors:
+        authors = ", ".join(f"{a} ({n})" for a, n in sig.top_authors[:top])
+        typer.echo("- Signature authors: " + authors)
+    if sig.top_eras:
+        typer.echo("- Eras you live in: " + ", ".join(f"{b} ({n})" for b, n in sig.top_eras[:top]))
+    if sig.top_genres:
+        typer.echo("- Genres: " + ", ".join(f"{g} ({n})" for g, n in sig.top_genres[:top]))
+
+    typer.echo("\n## Best reviews to feature")
+    for r in best_reviews(facts, top=top):
+        typer.echo(f"- {r.title} — {r.author} ({r.my_rating}★, {r.word_count} words)")
+        typer.echo(f'    "{r.snippet}"')
+
+
+@app.command()
 def drafts() -> None:
     """Show review-draft status and the worklist still needing drafts. Never posts."""
     from gr_autopilot.drafts.studio import pending_target_rows, status_counts

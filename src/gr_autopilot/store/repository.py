@@ -169,7 +169,8 @@ def book_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
         """
         SELECT b.book_id, b.title, b.author, b.my_rating, b.avg_rating, b.exclusive_shelf,
                b.date_read, b.date_added, b.num_pages, b.original_pub_year,
-               CASE WHEN r.is_empty = 0 THEN 1 ELSE 0 END AS has_review
+               CASE WHEN r.is_empty = 0 THEN 1 ELSE 0 END AS has_review,
+               COALESCE(r.review_text, '') AS review_text
         FROM books b
         LEFT JOIN reviews r ON r.book_id = b.book_id
         """
