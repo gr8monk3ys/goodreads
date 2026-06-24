@@ -34,10 +34,13 @@ add velocity exploding (69→65→**214** in 2023→24→25). Signature: philoso
 
 Each is spec → plan → TDD build → run → commit. Status: ☐ todo · ◐ in progress · ☑ done.
 
-- **SP1 — Insights analyzer** ◐
+- **SP1 — Insights analyzer** ☑ DONE
   Read-only `gr insights` (metrics + goal-tagged suggestions). Spec:
-  `specs/2026-06-23-goodreads-insights-design.md` (approved). → build + run on real data,
-  emit the prioritized "path to top 1%" action plan.
+  `specs/2026-06-23-goodreads-insights-design.md`. Built TDD (49 insights tests), all gates
+  green, run on the real library. Personal report at `data/insights-report.md` (git-ignored).
+  Top moves it surfaced: triage the 349 TBR (214 added in 2025 vs ~3 read/yr); rate 18
+  unrated reads; draft 60 missing reviews (42 ready); 26 stacked authors → shelves;
+  backfill 42 missing Date Reads.
 
 - **SP2 — Draft-review studio** ☐
   Generate review drafts (Claude RAG in the user's voice, prompt-cached) for the 60
@@ -69,3 +72,6 @@ Each is spec → plan → TDD build → run → commit. Status: ☐ todo · ◐ 
 ## Changelog
 
 - 2026-06-23 — Roadmap created. SP1 spec approved + committed. Loop started.
+- 2026-06-23 — SP1 DONE: insights layer built (metrics/suggestions/report/load + `gr
+  insights` CLI), TDD, 88 tests green @ 98% cov. Found+fixed a partial-year velocity bug
+  via real-data run. Next: SP2 draft-review studio.

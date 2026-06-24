@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -7,6 +8,31 @@ from gr_autopilot.cli import app
 
 runner = CliRunner()
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
+
+
+def test_insights_reports_over_library(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["insights"])
+    assert result.exit_code == 0, result.output
+    assert "Goodreads insights" in result.output
+    assert "3 books" in result.output
+
+
+def test_insights_json_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["insights", "--format", "json"])
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)
+    assert data["metrics"]["total_books"] == 3
+
+
+def test_insights_empty_db_is_friendly(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    result = runner.invoke(app, ["insights"])
+    assert result.exit_code == 0, result.output
+    assert "ingest" in result.output.lower()
 
 
 def test_ingest_then_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

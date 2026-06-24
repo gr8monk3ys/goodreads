@@ -153,3 +153,24 @@ def set_book_genres(conn: sqlite3.Connection, book_id: int, genres: Sequence[str
             "INSERT OR IGNORE INTO book_genres (book_id, genre) VALUES (?, ?)", (book_id, genre)
         )
     conn.commit()
+
+
+def book_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Every book with a has_review flag (non-empty review), for read-only analytics."""
+    return conn.execute(
+        """
+        SELECT b.book_id, b.title, b.author, b.my_rating, b.avg_rating, b.exclusive_shelf,
+               b.date_read, b.date_added, b.num_pages, b.original_pub_year,
+               CASE WHEN r.is_empty = 0 THEN 1 ELSE 0 END AS has_review
+        FROM books b
+        LEFT JOIN reviews r ON r.book_id = b.book_id
+        """
+    ).fetchall()
+
+
+def genres_by_book(conn: sqlite3.Connection) -> dict[int, tuple[str, ...]]:
+    """book_id -> its genres, for analytics joins."""
+    out: dict[int, list[str]] = {}
+    for row in conn.execute("SELECT book_id, genre FROM book_genres ORDER BY book_id, genre"):
+        out.setdefault(int(row["book_id"]), []).append(str(row["genre"]))
+    return {bid: tuple(gs) for bid, gs in out.items()}

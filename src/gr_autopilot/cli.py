@@ -51,6 +51,37 @@ def enrich(limit: int | None = None) -> None:
 
 
 @app.command()
+def insights(
+    *,
+    fmt: str = typer.Option("md", "--format", help="md | table | json"),
+    enrich: bool = False,
+    top: int = 10,
+) -> None:
+    """Read-only analytics + suggested moves. No account access, no writes."""
+    from gr_autopilot.insights.load import load_facts
+    from gr_autopilot.insights.metrics import compute
+    from gr_autopilot.insights.report import render
+    from gr_autopilot.insights.suggestions import suggest
+
+    settings = Settings()
+    conn = _open_db(settings)
+
+    if enrich:
+        from gr_autopilot.catalog.enrich import enrich_genres
+        from gr_autopilot.catalog.goodreads_public import GoodreadsPublicCatalog
+
+        enrich_genres(conn, GoodreadsPublicCatalog())
+
+    facts = load_facts(conn)
+    if not facts:
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        return
+
+    metrics = compute(facts)
+    typer.echo(render(metrics, suggest(metrics, top=top), fmt=fmt, top=top))
+
+
+@app.command()
 def stop() -> None:
     """Engage the kill switch: write a STOP sentinel that halts in-flight writes."""
     settings = Settings()

@@ -119,22 +119,27 @@ class TbrShape:
     size: int
     adds_by_year: list[tuple[int, int]]
     oldest_add_year: int | None
-    recent_year: int | None
+    recent_year: int | None  # latest calendar year on record (may be a partial year)
     recent_adds: int
+    peak_year: int | None  # year you added the most — the honest "velocity" signal
+    peak_adds: int
     authors: list[tuple[str, int]]  # most-stacked authors on the TBR, full ranked list
 
 
 def tbr_shape(facts: Sequence[BookFact]) -> TbrShape:
     tbr = [f for f in facts if f.exclusive_shelf == TO_READ]
     years = Counter(y for f in tbr if (y := _year(f.date_added)) is not None)
-    adds_by_year = sorted(years.items())
     recent_year = max(years) if years else None
+    # peak = most-added year; ties resolve to the later year for determinism.
+    peak_year = max(years, key=lambda y: (years[y], y)) if years else None
     return TbrShape(
         size=len(tbr),
-        adds_by_year=adds_by_year,
+        adds_by_year=sorted(years.items()),
         oldest_add_year=min(years) if years else None,
         recent_year=recent_year,
         recent_adds=years.get(recent_year, 0) if recent_year is not None else 0,
+        peak_year=peak_year,
+        peak_adds=years.get(peak_year, 0) if peak_year is not None else 0,
         authors=_rank(Counter(f.author for f in tbr if f.author)),
     )
 

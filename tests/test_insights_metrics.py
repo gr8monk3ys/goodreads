@@ -95,15 +95,18 @@ def test_tbr_shape_size_velocity_and_authors() -> None:
         bf(1, exclusive_shelf="to-read", date_added="2024/01/01", author="Poe"),
         bf(2, exclusive_shelf="to-read", date_added="2025/02/01", author="Poe"),
         bf(3, exclusive_shelf="to-read", date_added="2025/03/01", author="Wilde"),
-        bf(4, exclusive_shelf="read"),  # excluded
+        bf(4, exclusive_shelf="to-read", date_added="2026/01/01", author="X"),  # partial year
+        bf(5, exclusive_shelf="read"),  # excluded
     ]
     t = tbr_shape(facts)
-    assert t.size == 3
-    assert t.adds_by_year == [(2024, 1), (2025, 2)]
+    assert t.size == 4
+    assert t.adds_by_year == [(2024, 1), (2025, 2), (2026, 1)]
     assert t.oldest_add_year == 2024
-    assert t.recent_year == 2025
-    assert t.recent_adds == 2
-    assert t.authors == [("Poe", 2), ("Wilde", 1)]
+    assert t.recent_year == 2026  # latest year on record
+    assert t.recent_adds == 1
+    assert t.peak_year == 2025  # year you added the most — the real signal
+    assert t.peak_adds == 2
+    assert t.authors == [("Poe", 2), ("Wilde", 1), ("X", 1)]
 
 
 def test_pace_reads_by_year_and_missing_dates() -> None:
