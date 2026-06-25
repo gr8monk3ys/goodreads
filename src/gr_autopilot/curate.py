@@ -95,6 +95,17 @@ def tbr_triage(facts: Sequence[BookFact], top: int = 20) -> list[Triaged]:
     return triaged[:top]
 
 
+def find_duplicates(facts: Sequence[BookFact]) -> list[tuple[str, list[BookFact]]]:
+    """Group books whose titles collapse to the same normalized key (likely dup editions)."""
+    groups: dict[str, list[BookFact]] = defaultdict(list)
+    for f in facts:
+        key = re.sub(r"[^a-z0-9]+", "", f.title.lower())
+        if key:
+            groups[key].append(f)
+    out = [(books[0].title, books) for books in groups.values() if len(books) > 1]
+    return sorted(out, key=lambda g: g[0])
+
+
 @dataclass(frozen=True)
 class ProposedShelf:
     name: str

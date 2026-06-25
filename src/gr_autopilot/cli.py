@@ -165,6 +165,51 @@ def curate(*, top: int = 20) -> None:
         typer.echo(f"  - date: {b.title} — {b.author}")
 
 
+_DASHBOARD_BIO = (
+    "I read to argue with the dead. Most of what I love sits where philosophy meets fiction "
+    "— Dostoevsky, Hesse, Camus, Huxley, Frankl — books less interested in telling a story "
+    "than in asking what we owe ourselves and each other. I rate honestly, review when a "
+    "book leaves a mark, and I'm partial to anything that treats freedom, conformity, and "
+    "meaning as open questions rather than settled ones."
+)
+
+
+@app.command()
+def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
+    """Generate a self-contained HTML action board of your target profile state. Read-only."""
+    from gr_autopilot.actions.plan import is_unfilled, parse_plan
+    from gr_autopilot.dashboard import build_dashboard_html
+    from gr_autopilot.drafts.studio import status_counts
+    from gr_autopilot.insights.load import load_facts
+
+    settings = Settings()
+    conn = _open_db(settings)
+    facts = load_facts(conn)
+    if not facts:
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        return
+
+    # pull proposed ratings from an existing write-plan.csv, if present
+    proposed: dict[int, int] = {}
+    plan_path = settings.db_path.parent / "write-plan.csv"
+    if plan_path.exists():
+        for item in parse_plan(plan_path.read_text(encoding="utf-8")):
+            if item.action == "set_rating" and item.book_id and not is_unfilled(item):
+                proposed[item.book_id] = int(item.value)
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        build_dashboard_html(
+            facts,
+            draft_counts=status_counts(settings.drafts_dir),
+            proposed_ratings=proposed,
+            bio=_DASHBOARD_BIO,
+        ),
+        encoding="utf-8",
+    )
+    typer.echo(f"wrote {out} — open it in a browser; ticks persist locally.")
+
+
 @app.command()
 def presence(*, top: int = 5) -> None:
     """Profile-presence pack: your reading signature + best reviews to feature. Read-only."""

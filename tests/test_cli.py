@@ -51,6 +51,20 @@ def test_curate_empty_db_is_friendly(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert "ingest" in result.output.lower()
 
 
+def test_dashboard_writes_self_contained_html(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    out = tmp_path / "dash.html"
+    result = runner.invoke(app, ["dashboard", "--out", str(out)])
+    assert result.exit_code == 0, result.output
+    assert out.exists()
+    text = out.read_text()
+    assert "<!doctype html>" in text
+    assert "existential-classics" in text
+
+
 def test_presence_reports_pack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     runner.invoke(app, ["ingest", str(FIXTURE)])

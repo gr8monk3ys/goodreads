@@ -51,6 +51,7 @@ select = ["E", "F", "I", "UP", "B", "S"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
 "src/gr_autopilot/catalog/goodreads_public.py" = ["S310"]  # fixed-host public read
+"src/gr_autopilot/dashboard.py" = ["E501"]  # embedded CSS/HTML render strings
 
 [tool.mypy]
 python_version = "3.12"

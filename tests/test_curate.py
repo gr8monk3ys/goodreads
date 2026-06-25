@@ -1,4 +1,4 @@
-from gr_autopilot.curate import hygiene, shelf_plan, tbr_triage
+from gr_autopilot.curate import find_duplicates, hygiene, shelf_plan, tbr_triage
 from gr_autopilot.insights.metrics import BookFact
 
 
@@ -47,6 +47,23 @@ def test_tbr_triage_prefers_loved_author_over_lukewarm_many() -> None:
     triaged = tbr_triage(facts)
     # one 5★ author should beat three 3★ reads — taste, not volume
     assert triaged[0].book.title == "LovedBook"
+
+
+def test_find_duplicates_groups_by_normalized_title() -> None:
+    facts = [
+        bf(1, title="Brave New World", author="Aldous Huxley"),
+        bf(2, title="Brave New World", author="Aldous Huxley", exclusive_shelf="to-read"),
+        bf(3, title="1984", author="George Orwell"),
+        bf(4, title="The Very Hungry Caterpillar!", author="Eric Carle"),
+        bf(5, title="the very hungry caterpillar", author="Eric Carle"),
+    ]
+    dups = find_duplicates(facts)
+    titles = {grp[0] for grp in dups}
+    assert "Brave New World" in titles  # two editions collapse
+    assert any(len(grp[1]) == 2 for grp in dups if grp[0] == "Brave New World")
+    assert "1984" not in titles  # only one copy -> not a duplicate
+    # punctuation/case-insensitive match catches the caterpillar pair too
+    assert any(len(grp[1]) == 2 for grp in dups if "Caterpillar" in grp[0])
 
 
 def test_shelf_plan_proposes_author_and_era_shelves() -> None:
