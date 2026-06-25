@@ -19,9 +19,8 @@ _UNSHELVE_MUTATION = (
 
 
 # RateBook/UnrateBook discovered in the app's JS bundles (operation names verified read-only).
-# Input shape {id, rating} is INFERRED by analogy to ShelveBook — pending one live
-# confirmation through `gr apply` (the first live run validates or reveals the real shape;
-# an AppSync "FieldUndefined" error names the correct field). Selection sets are provisional.
+# Input shape {id, rating} CONFIRMED live on 2026-06-24 via a no-op re-rating through
+# `gr apply` (returned 200, no errors). Selection sets are minimal/provisional.
 _RATE_MUTATION = (
     "mutation RateBook($input: RateBookInput!) { rateBook(input: $input) { __typename } }"
 )
