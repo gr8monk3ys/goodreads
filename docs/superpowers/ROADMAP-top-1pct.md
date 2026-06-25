@@ -127,3 +127,24 @@ rating sentiment (5 loved → 2 disappointed-but-fair).
   **Safe-automation ceiling reached.** Remaining levers: user's manual actions (post,
   shelve, engage) and SP5 (risky writes, needs explicit go-ahead). Pushing main to origin
   also awaits user OK.
+- 2026-06-24 — `gr dashboard` DONE: self-contained HTML action board (inline CSS/JS,
+  localStorage-persisting checkboxes, current→target scorecards). `find_duplicates` added to
+  curate. 128 tests; merged to main.
+- 2026-06-25 — **Launch-sequence layer** (`launch.py` + `gr launch` + `data/launch-plan.md`):
+  the dashboard shows *everything*; launch answers *what to do first + at what cadence*.
+  `ranked_review_targets` orders unreviewed reads by draft-ready → my_rating → avg_rating; the
+  plan buckets today / this-week / cadence / ongoing and now leads the dashboard as a
+  "Start here" card. Adversarially verified by a 2-lens workflow (code + strategy honesty),
+  which caught two real issues, both fixed: (a) the canon subtitle interpolated book titles
+  into HTML un-escaped (injection hole) — now `_e()`'d with a regression test; (b) the copy
+  called `avg_rating` "recognizability/reach" but it is the crowd's MEAN score, not readership
+  (the CSV has no ratings-count) — reframed as taste, and all feed-algorithm claims hedged from
+  fact to heuristic.
+- 2026-06-25 — **Dashboard redesign** (user: port styling from `../lscaturchio.xyz`, add
+  visualizations, humanize copy). Ported the site's design system into the standalone HTML:
+  Fraunces / Instrument Sans / IBM Plex Mono (Google-font @import, system fallbacks offline),
+  forest-green-on-warm-paper, hairline borders, paper-grain overlay, **dark mode** via
+  prefers-color-scheme. Added a "Your reading in numbers" section — pure CSS bar charts for
+  rating distribution, books-by-year, eras, and genres — plus meter-fill scorecards and a live
+  done-counter. Humanized the default bio (killed the AI tells) and made it a clearly-yours
+  draft. 139 tests green @ 96% cov; all gates pass; light + dark verified by screenshot.

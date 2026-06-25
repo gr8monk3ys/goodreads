@@ -166,11 +166,11 @@ def curate(*, top: int = 20) -> None:
 
 
 _DASHBOARD_BIO = (
-    "I read to argue with the dead. Most of what I love sits where philosophy meets fiction "
-    "— Dostoevsky, Hesse, Camus, Huxley, Frankl — books less interested in telling a story "
-    "than in asking what we owe ourselves and each other. I rate honestly, review when a "
-    "book leaves a mark, and I'm partial to anything that treats freedom, conformity, and "
-    "meaning as open questions rather than settled ones."
+    "Mostly philosophy that snuck into novels — Dostoevsky, Hesse, Camus, Kafka, Frankl — "
+    "though my shelf gives me away as less serious than that sounds (there's Percy Jackson "
+    "on here too). I read slowly, rate honestly, and only bother reviewing the ones that "
+    "actually stuck with me. Always up for a recommendation that argues with something I "
+    "already love."
 )
 
 
@@ -179,7 +179,7 @@ def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
     """Generate a self-contained HTML action board of your target profile state. Read-only."""
     from gr_autopilot.actions.plan import is_unfilled, parse_plan
     from gr_autopilot.dashboard import build_dashboard_html
-    from gr_autopilot.drafts.studio import status_counts
+    from gr_autopilot.drafts.studio import has_draft, status_counts
     from gr_autopilot.insights.load import load_facts
 
     settings = Settings()
@@ -197,17 +197,44 @@ def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
             if item.action == "set_rating" and item.book_id and not is_unfilled(item):
                 proposed[item.book_id] = int(item.value)
 
+    drafted = {f.book_id for f in facts if has_draft(settings.drafts_dir, f.book_id)}
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
         build_dashboard_html(
             facts,
             draft_counts=status_counts(settings.drafts_dir),
             proposed_ratings=proposed,
+            drafted_ids=drafted,
             bio=_DASHBOARD_BIO,
         ),
         encoding="utf-8",
     )
     typer.echo(f"wrote {out} — open it in a browser; ticks persist locally.")
+
+
+@app.command()
+def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = 3) -> None:
+    """Sequence the action board into a paced launch campaign (what to do first). Read-only."""
+    from gr_autopilot.drafts.studio import has_draft
+    from gr_autopilot.insights.load import load_facts
+    from gr_autopilot.launch import build_launch_plan, render_markdown
+
+    settings = Settings()
+    conn = _open_db(settings)
+    facts = load_facts(conn)
+    if not facts:
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        return
+
+    drafted = {f.book_id for f in facts if has_draft(settings.drafts_dir, f.book_id)}
+    plan = build_launch_plan(
+        facts, drafted_ids=drafted, bio=_DASHBOARD_BIO, reviews_per_week=per_week
+    )
+    md = render_markdown(plan)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(md, encoding="utf-8")
+    typer.echo(md)
+    typer.echo(f"\nwrote {out} · full board: gr dashboard")
 
 
 @app.command()

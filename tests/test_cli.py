@@ -65,6 +65,19 @@ def test_dashboard_writes_self_contained_html(
     assert "existential-classics" in text
 
 
+def test_launch_writes_sequenced_plan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    out = tmp_path / "launch.md"
+    result = runner.invoke(app, ["launch", "--out", str(out)])
+    assert result.exit_code == 0, result.output
+    assert out.exists()
+    assert "launch plan" in out.read_text().lower()
+    assert "This week" in result.output  # the sequence is echoed, not just written
+
+
 def test_presence_reports_pack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     runner.invoke(app, ["ingest", str(FIXTURE)])
