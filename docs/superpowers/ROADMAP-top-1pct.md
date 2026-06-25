@@ -114,6 +114,13 @@ rating sentiment (5 loved → 2 disappointed-but-fair).
   live genre enrichment (~37 books), dispatched a draft quality-pass
   (`data/draft-quality-report.md`). 110 tests green. Branch fast-forward merged into main.
   SP5 remains available only on explicit future go-ahead.
+- 2026-06-24 — SP5 progress: user's saved Playwright session still valid (no re-login).
+  Read-only discovery (JS-bundle grep) surfaced the write mutations: RateBook, UnrateBook,
+  ShelveBook, TagBook, Like, Comment. Implemented `build_rate_request`/`build_unrate_request`
+  + wired `set_rating` to RateBook through the safe spine (125 tests). Input shape {id,rating}
+  inferred — pending ONE live confirmation, which must be run by the USER via `gr apply`
+  (an ad-hoc verification write was correctly blocked for bypassing the spine). No date
+  mutation found in the bundles — `set_date` still unimplemented (likely TagBook/review-edit).
 - 2026-06-24 — Quality pass found the drafts individually on-voice but collectively
   formulaic (4 repeated openers; the 5 Percy Jackson reviews shared one thesis). Regenerated
   the 11 worst offenders with distinct openers + angles (each PJ book a different thesis).

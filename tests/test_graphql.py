@@ -1,11 +1,26 @@
 from gr_autopilot.actions.graphql import (
+    build_rate_request,
     build_shelve_request,
+    build_unrate_request,
     build_unshelve_request,
     parse_gid,
     parse_jwt,
 )
 
 GID = "kca://book/amzn1.gr.book.v1.tlO_PYZREqIcBeayzhXEYA"
+
+
+def test_build_rate_request() -> None:
+    r = build_rate_request(GID, 5)
+    assert r["operationName"] == "RateBook"
+    assert r["variables"] == {"input": {"id": GID, "rating": 5}}
+    assert "mutation RateBook" in str(r["query"])
+
+
+def test_build_unrate_request() -> None:
+    r = build_unrate_request(GID)
+    assert r["operationName"] == "UnrateBook"
+    assert r["variables"] == {"input": {"id": GID}}
 
 
 def test_build_shelve_request() -> None:

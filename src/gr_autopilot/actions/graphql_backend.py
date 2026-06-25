@@ -3,7 +3,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from gr_autopilot.actions.graphql import APPSYNC_URL, build_shelve_request, parse_gid, parse_jwt
+from gr_autopilot.actions.graphql import (
+    APPSYNC_URL,
+    build_rate_request,
+    build_shelve_request,
+    parse_gid,
+    parse_jwt,
+)
 from gr_autopilot.catalog.parse import extract_next_data
 
 # Live write backend over Goodreads' AppSync GraphQL API. Requires a STEALTHED,
@@ -50,7 +56,8 @@ class GoodreadsGraphQLBackend:
         self._post(jwt, build_shelve_request(gid, shelf))
 
     def set_rating(self, book_id: int, rating: int) -> None:
-        raise NotImplementedError("rating mutation not yet captured (see capture runbook)")
+        jwt, gid = self._jwt_and_gid(book_id)
+        self._post(jwt, build_rate_request(gid, rating))
 
     def set_date(self, book_id: int, date_read: str) -> None:
         raise NotImplementedError("date-read mutation not yet captured (see capture runbook)")

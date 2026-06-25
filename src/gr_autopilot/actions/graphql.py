@@ -18,6 +18,36 @@ _UNSHELVE_MUTATION = (
 )
 
 
+# RateBook/UnrateBook discovered in the app's JS bundles (operation names verified read-only).
+# Input shape {id, rating} is INFERRED by analogy to ShelveBook — pending one live
+# confirmation through `gr apply` (the first live run validates or reveals the real shape;
+# an AppSync "FieldUndefined" error names the correct field). Selection sets are provisional.
+_RATE_MUTATION = (
+    "mutation RateBook($input: RateBookInput!) { rateBook(input: $input) { __typename } }"
+)
+_UNRATE_MUTATION = (
+    "mutation UnrateBook($input: UnrateBookInput!) { unrateBook(input: $input) { __typename } }"
+)
+
+
+def build_rate_request(gid: str, rating: int) -> dict[str, object]:
+    """GraphQL request to set a star rating (1-5) on a book."""
+    return {
+        "operationName": "RateBook",
+        "variables": {"input": {"id": gid, "rating": rating}},
+        "query": _RATE_MUTATION,
+    }
+
+
+def build_unrate_request(gid: str) -> dict[str, object]:
+    """GraphQL request to remove a rating from a book."""
+    return {
+        "operationName": "UnrateBook",
+        "variables": {"input": {"id": gid}},
+        "query": _UNRATE_MUTATION,
+    }
+
+
 def build_shelve_request(gid: str, shelf_name: str) -> dict[str, object]:
     """GraphQL request to shelve a book (add/set exclusive shelf). Verified contract."""
     return {
