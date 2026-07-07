@@ -238,6 +238,31 @@ def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = 3) -> Non
 
 
 @app.command()
+def backup(*, dest: Path | None = None) -> None:
+    """Tar data/ + drafts/ to a timestamped archive outside the repo.
+
+    These are the only irreplaceable artifacts (git-ignored by design), so they
+    are the one thing git can't restore. Run this after any drafting session.
+    """
+    from datetime import datetime
+
+    from gr_autopilot.backup import backup_artifacts
+
+    settings = Settings()
+    sources = [settings.db_path.parent, settings.drafts_dir.parent]
+    try:
+        archive = backup_artifacts(
+            sources, dest or settings.backup_dir, timestamp=datetime.now()
+        )
+    except ValueError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(1) from exc
+    size_kb = archive.stat().st_size / 1024
+    typer.echo(f"backed up {', '.join(str(s) for s in sources if s.exists())}")
+    typer.echo(f"-> {archive} ({size_kb:.0f} KB)")
+
+
+@app.command()
 def presence(*, top: int = 5) -> None:
     """Profile-presence pack: your reading signature + best reviews to feature. Read-only."""
     from gr_autopilot.insights.load import load_facts

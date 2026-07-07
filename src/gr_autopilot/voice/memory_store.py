@@ -18,8 +18,8 @@ def cosine(a: list[float], b: list[float]) -> float:
 class InMemoryVectorStore:
     """Pure-Python brute-force vector store — correct and fast for small personal corpora.
 
-    Doubles as the default zero-dependency store and the unit-test fixture; the
-    Chroma-backed store is a drop-in alternative behind the same protocol.
+    The default zero-dependency store, the unit-test fixture, and (since the
+    corpus is a few dozen reviews rebuilt every run) the production store too.
     """
 
     def __init__(self) -> None:

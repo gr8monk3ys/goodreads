@@ -5,13 +5,12 @@ description = "Autonomous automation suite for a Goodreads account"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.7",
-    "pydantic-settings>=2.3",
+    "pydantic-settings>=2.14.2",
     "typer>=0.12",
 ]
 
 [project.optional-dependencies]
 voice = [
-    "chromadb>=0.5",
     "sentence-transformers>=3",
 ]
 generate = [
@@ -61,7 +60,6 @@ files = ["src", "tests"]
 [[tool.mypy.overrides]]
 module = [
     "sentence_transformers.*",
-    "chromadb.*",
     "anthropic.*",
     "playwright.*",
     "playwright_stealth.*",
@@ -77,12 +75,11 @@ pythonpath = ["src"]
 exclude_dirs = ["tests"]
 
 [tool.coverage.run]
-# Thin adapters over optional heavy deps (torch via sentence-transformers,
-# chromadb); exercised by integration tests when the `voice` extra is
-# installed, not in the unit-test CI run.
+# Thin adapters over optional heavy deps (torch via sentence-transformers);
+# exercised by integration tests when the `voice` extra is installed, not in
+# the unit-test CI run.
 omit = [
     "src/gr_autopilot/voice/embedder.py",
-    "src/gr_autopilot/voice/chroma_store.py",
     "src/gr_autopilot/generate/anthropic_client.py",
     "src/gr_autopilot/actions/playwright_backend.py",
     "src/gr_autopilot/browser/session.py",

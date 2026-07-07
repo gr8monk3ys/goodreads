@@ -45,6 +45,7 @@ everything above it is pure local data work — unit-tested without ever touchin
 | presence — reading signature + bio drafts + reviews to feature (`gr presence`) | ✅ built & green |
 | dashboard — self-contained HTML board: scorecards + CSS charts + checklists, themed after the site, dark mode, ticks persist (`gr dashboard`) | ✅ built & green |
 | launch — sequenced rollout campaign: what to do first + cadence (`gr launch`) | ✅ built & green |
+| backup — tar data/ + drafts/ to `~/Backups/goodreads-autopilot` (the git-ignored irreplaceables) (`gr backup`) | ✅ built & green |
 | actions safety spine · orchestrator · CLI (`stop`/`review`/`enrich`) | ✅ built & green (48 tests, ~97% coverage) |
 | write spine — `set_rating`/`set_date`/`set_shelf` behind kill-switch/dry-run/idempotency/throttle | ✅ built & green |
 | `gr apply` (dry-run-first plan executor) + `gr login` | ✅ built & green |
@@ -73,6 +74,9 @@ uv run gr review --dry-run --limit 1       # generates drafts, logs the writes i
 
 # 3. Kill switch any time
 uv run gr stop                             # writes data/STOP, halts in-flight writes
+
+# 4. After any drafting session — data/ and drafts/ are git-ignored, git can't save them
+uv run gr backup                           # tar -> ~/Backups/goodreads-autopilot (GR_BACKUP_DIR)
 ```
 
 ## Enabling real writes

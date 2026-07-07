@@ -10,6 +10,10 @@ class Settings(BaseSettings):
 
     db_path: Path = Path("data/autopilot.db")
     drafts_dir: Path = Path("drafts/reviews")  # editable review drafts (never auto-posted)
+    # Deliberately OUTSIDE the repo: data/ and drafts/ are git-ignored personal
+    # content, so a worktree cleanup or reclone destroys them. Backups must not
+    # live in the same blast radius.
+    backup_dir: Path = Path.home() / "Backups" / "goodreads-autopilot"
     require_rating: bool = True  # rated-reads-only target rule (sign-off)
     disable_writes: bool = False  # kill switch (used by actions layer)
     max_actions_per_run: int = 10

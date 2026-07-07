@@ -78,6 +78,36 @@ def test_launch_writes_sequenced_plan(
     assert "This week" in result.output  # the sequence is echoed, not just written
 
 
+def test_backup_archives_db_and_drafts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "data" / "x.db"))
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts" / "reviews"))
+    monkeypatch.setenv("GR_BACKUP_DIR", str(tmp_path / "backups"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    drafts = tmp_path / "drafts" / "reviews"
+    drafts.mkdir(parents=True)
+    (drafts / "1-dune.md").write_text("draft")
+
+    result = runner.invoke(app, ["backup"])
+
+    assert result.exit_code == 0, result.output
+    archives = list((tmp_path / "backups").glob("gr-backup-*.tar.gz"))
+    assert len(archives) == 1
+    assert str(archives[0]) in result.output  # tells the user where the backup went
+
+
+def test_backup_with_nothing_to_save_is_friendly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "ghost" / "x.db"))
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "ghost" / "drafts" / "reviews"))
+    monkeypatch.setenv("GR_BACKUP_DIR", str(tmp_path / "backups"))
+    result = runner.invoke(app, ["backup"])
+    assert result.exit_code == 1
+    assert "nothing to back up" in result.output.lower()
+
+
 def test_presence_reports_pack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     runner.invoke(app, ["ingest", str(FIXTURE)])

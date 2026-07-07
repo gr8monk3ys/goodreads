@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 from gr_autopilot.generate.client import GenerationResult
+
+if TYPE_CHECKING:  # anthropic is an optional extra; import types only for mypy
+    from anthropic.types import TextBlockParam
 
 
 class AnthropicChatClient:
@@ -26,7 +31,7 @@ class AnthropicChatClient:
         resp = self._client.messages.create(
             model=model,
             max_tokens=max_tokens,
-            system=system_blocks,
+            system=cast("list[TextBlockParam]", system_blocks),
             messages=[{"role": "user", "content": user_text}],
             thinking={"type": "adaptive"},
         )
