@@ -82,9 +82,7 @@ def insights(
 
     facts = load_facts(conn)
     if not facts:
-        typer.echo(
-            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
-        )
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
     metrics = compute(facts)
@@ -105,9 +103,7 @@ def plan(*, top: int = 5) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo(
-            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
-        )
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
     metrics = compute(facts)
@@ -145,9 +141,7 @@ def curate(*, top: int = 20) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo(
-            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
-        )
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
     h = hygiene(facts)
@@ -164,9 +158,7 @@ def curate(*, top: int = 20) -> None:
         typer.echo(f"  - {s.name} [{s.kind}] — {s.book_count} books")
 
     typer.echo("\n## Data hygiene")
-    typer.echo(
-        f"  {len(h.unrated_reads)} unrated reads · {len(h.undated_reads)} undated reads"
-    )
+    typer.echo(f"  {len(h.unrated_reads)} unrated reads · {len(h.undated_reads)} undated reads")
     for b in h.unrated_reads[:top]:
         typer.echo(f"  - rate: {b.title} — {b.author}")
     for b in h.undated_reads[:top]:
@@ -194,9 +186,7 @@ def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo(
-            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
-        )
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
     # pull proposed ratings from an existing write-plan.csv, if present
@@ -233,9 +223,7 @@ def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = 3) -> Non
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo(
-            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
-        )
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
     drafted = {f.book_id for f in facts if has_draft(settings.drafts_dir, f.book_id)}
@@ -263,9 +251,7 @@ def backup(*, dest: Path | None = None) -> None:
     settings = Settings()
     sources = [settings.db_path.parent, settings.drafts_dir.parent]
     try:
-        archive = backup_artifacts(
-            sources, dest or settings.backup_dir, timestamp=datetime.now()
-        )
+        archive = backup_artifacts(sources, dest or settings.backup_dir, timestamp=datetime.now())
     except ValueError as exc:
         typer.echo(str(exc))
         raise typer.Exit(1) from exc
@@ -284,9 +270,7 @@ def presence(*, top: int = 5) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo(
-            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
-        )
+        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
     sig = signature(facts)
@@ -298,14 +282,9 @@ def presence(*, top: int = 5) -> None:
         authors = ", ".join(f"{a} ({n})" for a, n in sig.top_authors[:top])
         typer.echo("- Signature authors: " + authors)
     if sig.top_eras:
-        typer.echo(
-            "- Eras you live in: "
-            + ", ".join(f"{b} ({n})" for b, n in sig.top_eras[:top])
-        )
+        typer.echo("- Eras you live in: " + ", ".join(f"{b} ({n})" for b, n in sig.top_eras[:top]))
     if sig.top_genres:
-        typer.echo(
-            "- Genres: " + ", ".join(f"{g} ({n})" for g, n in sig.top_genres[:top])
-        )
+        typer.echo("- Genres: " + ", ".join(f"{g} ({n})" for g, n in sig.top_genres[:top]))
 
     typer.echo("\n## Best reviews to feature")
     for r in best_reviews(facts, top=top):
@@ -366,9 +345,7 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
     all_items = parse_plan(plan_csv.read_text(encoding="utf-8"))
     ready = [it for it in all_items if not is_unfilled(it)]
     unfilled = len(all_items) - len(ready)
-    capped = max(
-        0, len(ready) - settings.max_actions_per_run
-    )  # blast-radius cap per run
+    capped = max(0, len(ready) - settings.max_actions_per_run)  # blast-radius cap per run
     items = ready[: settings.max_actions_per_run]
     stop_file = settings.db_path.parent / "STOP"
     run_id = start_run(conn, "dry_run" if dry_run else "live")
@@ -392,9 +369,7 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
             f"{would} would-write · {already} already-done · {unfilled} unfilled (skipped) · "
             f"{capped} capped (raise GR_MAX_ACTIONS_PER_RUN)"
         )
-        typer.echo(
-            "Review the plan, then `gr login` + re-run with --no-dry-run to write."
-        )
+        typer.echo("Review the plan, then `gr login` + re-run with --no-dry-run to write.")
         return
 
     from gr_autopilot.actions.graphql_backend import GoodreadsGraphQLBackend
@@ -402,9 +377,7 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
 
     with authed_page() as page:
         if not is_logged_in(page):
-            typer.echo(
-                "Not logged in — run `gr login` first (saves your browser session)."
-            )
+            typer.echo("Not logged in — run `gr login` first (saves your browser session).")
             raise typer.Exit(1)
         ex = ActionExecutor(
             conn,

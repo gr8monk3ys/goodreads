@@ -39,9 +39,7 @@ def test_ranked_targets_lead_with_drafted_then_passion() -> None:
     titles = [f.title for f in ranked]
     assert "Already Done" not in titles  # reviewed books are not targets
     assert titles[0] == "My Favorite"  # a ready draft leads
-    assert titles.index("Beloved Classic") < titles.index(
-        "Faint Praise"
-    )  # passion before faint
+    assert titles.index("Beloved Classic") < titles.index("Faint Praise")  # passion before faint
 
 
 def test_plan_has_today_and_this_week_phases() -> None:
@@ -81,8 +79,6 @@ def test_empty_library_is_safe() -> None:
 
 def test_render_markdown_includes_phase_titles() -> None:
     facts = [_read(1, "Solo", "A", 5)]
-    md = render_markdown(
-        build_launch_plan(facts, drafted_ids=set(), bio="b", reviews_per_week=3)
-    )
+    md = render_markdown(build_launch_plan(facts, drafted_ids=set(), bio="b", reviews_per_week=3))
     assert "# " in md  # has a heading
     assert "This week" in md

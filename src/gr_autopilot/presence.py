@@ -63,9 +63,7 @@ def _snippet(text: str, limit: int = 140) -> str:
 
 def best_reviews(facts: Sequence[BookFact], top: int = 5) -> list[FeaturedReview]:
     """Your existing written reviews, ranked longest/most-substantive first, to feature."""
-    reviewed = [
-        f for f in facts if f.exclusive_shelf == READ and f.has_review and f.review_text
-    ]
+    reviewed = [f for f in facts if f.exclusive_shelf == READ and f.has_review and f.review_text]
     reviewed.sort(key=lambda f: (-len(f.review_text.split()), -f.my_rating, f.title))
     return [
         FeaturedReview(

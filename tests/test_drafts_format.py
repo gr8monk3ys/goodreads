@@ -2,9 +2,7 @@ from gr_autopilot.drafts.format import DraftMeta, parse_draft, render_draft, slu
 
 
 def test_render_then_parse_roundtrips_meta() -> None:
-    meta = DraftMeta(
-        book_id=11, title="Dune: Part One", author="Frank Herbert", my_rating=5
-    )
+    meta = DraftMeta(book_id=11, title="Dune: Part One", author="Frank Herbert", my_rating=5)
     text = render_draft(meta, "A masterpiece of world-building.")
     parsed_meta, body = parse_draft(text)
     assert parsed_meta == meta  # colon in title survives the round-trip

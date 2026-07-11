@@ -51,9 +51,7 @@ def test_backup_skips_missing_sources(tmp_path: Path) -> None:
     sources = _seed(tmp_path / "repo")
     missing = tmp_path / "repo" / "nope"
 
-    archive = backup_artifacts(
-        [*sources, missing], tmp_path / "backups", timestamp=STAMP
-    )
+    archive = backup_artifacts([*sources, missing], tmp_path / "backups", timestamp=STAMP)
 
     with tarfile.open(archive) as tar:
         assert not any(n.startswith("nope") for n in tar.getnames())

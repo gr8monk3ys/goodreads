@@ -81,12 +81,8 @@ def rating_profile(facts: Sequence[BookFact]) -> RatingProfile:
     for r in rated:
         if r in histogram:
             histogram[r] += 1
-    pairs = [
-        (f.my_rating, f.avg_rating) for f in read if f.my_rating > 0 and f.avg_rating
-    ]
-    crowd_delta = (
-        round(statistics.mean([m - a for m, a in pairs]), 2) if pairs else None
-    )
+    pairs = [(f.my_rating, f.avg_rating) for f in read if f.my_rating > 0 and f.avg_rating]
+    crowd_delta = round(statistics.mean([m - a for m, a in pairs]), 2) if pairs else None
     return RatingProfile(
         n_read=len(read),
         n_rated=len(rated),
@@ -166,9 +162,7 @@ def pace(facts: Sequence[BookFact]) -> Pace:
 
 @dataclass(frozen=True)
 class Eras:
-    by_band: list[
-        tuple[str, int]
-    ]  # chronological: pre-1500 first, then decades ascending
+    by_band: list[tuple[str, int]]  # chronological: pre-1500 first, then decades ascending
     n_missing: int
 
 
@@ -182,9 +176,7 @@ def _band_sort_key(band: str) -> int:
 
 def eras(facts: Sequence[BookFact]) -> Eras:
     read = _read(facts)
-    bands = Counter(
-        _band(f.original_pub_year) for f in read if f.original_pub_year is not None
-    )
+    bands = Counter(_band(f.original_pub_year) for f in read if f.original_pub_year is not None)
     by_band = sorted(bands.items(), key=lambda kv: _band_sort_key(kv[0]))
     return Eras(
         by_band=by_band,

@@ -20,10 +20,7 @@ def sample() -> list[BookFact]:
         date_read="2024/01/01",
         genres=("Classics",),
     )
-    tbr = [
-        BookFact(book_id=100 + i, exclusive_shelf="to-read", author="Poe")
-        for i in range(160)
-    ]
+    tbr = [BookFact(book_id=100 + i, exclusive_shelf="to-read", author="Poe") for i in range(160)]
     return reads + tbr
 
 
@@ -34,9 +31,7 @@ def test_render_markdown_has_sections_and_numbers() -> None:
     assert "## Ratings" in out
     assert "## Suggested moves" in out
     assert "172 books" in out  # 12 read + 160 to-read
-    assert (
-        "Rate 11" in out or "rating" in out.lower()
-    )  # the rating-gap suggestion surfaces
+    assert "Rate 11" in out or "rating" in out.lower()  # the rating-gap suggestion surfaces
 
 
 def test_render_json_roundtrips() -> None:

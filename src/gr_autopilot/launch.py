@@ -22,9 +22,7 @@ READ = "read"
 _DEFAULT_CADENCE = 3
 
 
-def ranked_review_targets(
-    facts: Sequence[BookFact], drafted_ids: set[int]
-) -> list[BookFact]:
+def ranked_review_targets(facts: Sequence[BookFact], drafted_ids: set[int]) -> list[BookFact]:
     """Unreviewed read books, ranked so the easiest, strongest ones come first.
 
     A ready draft leads (you can act today), then how much you loved it (`my_rating`), then a
@@ -71,11 +69,7 @@ class LaunchPlan:
 
 def _review_step(f: BookFact, drafted_ids: set[int]) -> LaunchStep:
     stars = f"{f.my_rating}★" if f.my_rating else "unrated"
-    detail = (
-        "draft ready in drafts/reviews/"
-        if f.book_id in drafted_ids
-        else "needs a draft"
-    )
+    detail = "draft ready in drafts/reviews/" if f.book_id in drafted_ids else "needs a draft"
     return LaunchStep(f"Post: {f.title} — {f.author} ({stars})", detail)
 
 
@@ -136,9 +130,7 @@ def build_launch_plan(
     # 4 · Ongoing — the weekly habit that compounds presence.
     ongoing = [
         LaunchStep(f"Each week: post your next ~{cadence} reviews from the list above"),
-        LaunchStep(
-            "Each week: like + leave one real comment on a review of a book you've read"
-        ),
+        LaunchStep("Each week: like + leave one real comment on a review of a book you've read"),
         LaunchStep("Keep your Reading Challenge count updated as you log books"),
     ]
 
@@ -190,7 +182,5 @@ def render_markdown(plan: LaunchPlan) -> str:
     for p in plan.phases:
         lines += ["", f"## {p.title}", "", f"_{p.blurb}_", ""]
         for s in p.steps:
-            lines.append(
-                f"- [ ] {s.text}" + (f"  \n      {s.detail}" if s.detail else "")
-            )
+            lines.append(f"- [ ] {s.text}" + (f"  \n      {s.detail}" if s.detail else ""))
     return "\n".join(lines)

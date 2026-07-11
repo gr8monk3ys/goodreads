@@ -35,9 +35,7 @@ def login(state_path: Path = DEFAULT_STATE) -> None:
 
 
 @contextmanager
-def authed_page(
-    state_path: Path = DEFAULT_STATE, *, headless: bool = True
-) -> Iterator[Any]:
+def authed_page(state_path: Path = DEFAULT_STATE, *, headless: bool = True) -> Iterator[Any]:
     """Yield a stealthed, storage_state-authenticated Page.
 
     Stealth + a realistic UA/viewport/locale/timezone are REQUIRED — plain headless

@@ -82,8 +82,7 @@ def _markdown(m: LibraryMetrics, suggestions: Sequence[Suggestion], top: int) ->
         lines += [
             "",
             "## Pages",
-            f"- {pg.total_pages:,} pages across {pg.n_with_pages} read · "
-            f"median {pg.median_pages}",
+            f"- {pg.total_pages:,} pages across {pg.n_with_pages} read · median {pg.median_pages}",
         ]
 
     if m.authors:

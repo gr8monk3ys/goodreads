@@ -129,12 +129,7 @@ def suggest(m: LibraryMetrics, top: int = 10) -> list[Suggestion]:
         if m.genres.top:
             bits.append("top genres " + ", ".join(g for g, _ in m.genres.top[:3]))
         if m.eras.by_band:
-            bits.append(
-                "you range from "
-                + m.eras.by_band[0][0]
-                + " to "
-                + m.eras.by_band[-1][0]
-            )
+            bits.append("you range from " + m.eras.by_band[0][0] + " to " + m.eras.by_band[-1][0])
         if five:
             bits.append(f"{five} five-star favorites to feature")
         out.append(

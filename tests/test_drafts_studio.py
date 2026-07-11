@@ -51,9 +51,7 @@ def test_status_counts_missing_dir_is_empty(tmp_path: Path) -> None:
     assert status_counts(tmp_path / "nope") == {}
 
 
-def test_pending_targets_excludes_already_drafted(
-    conn: sqlite3.Connection, tmp_path: Path
-) -> None:
+def test_pending_targets_excludes_already_drafted(conn: sqlite3.Connection, tmp_path: Path) -> None:
     upsert_books(conn, parse_export(FIXTURE))
     # fixture has exactly one read+rated+unreviewed target: book 22
     assert [r["book_id"] for r in pending_target_rows(conn, tmp_path)] == [22]

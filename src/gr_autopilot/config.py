@@ -9,9 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="GR_", env_file=".env", extra="ignore")
 
     db_path: Path = Path("data/autopilot.db")
-    drafts_dir: Path = Path(
-        "drafts/reviews"
-    )  # editable review drafts (never auto-posted)
+    drafts_dir: Path = Path("drafts/reviews")  # editable review drafts (never auto-posted)
     # Deliberately OUTSIDE the repo: data/ and drafts/ are git-ignored personal
     # content, so a worktree cleanup or reclone destroys them. Backups must not
     # live in the same blast radius.

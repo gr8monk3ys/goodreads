@@ -53,9 +53,7 @@ def test_best_reviews_ranks_longest_substantive_first() -> None:
             title="Long",
             review_text=" ".join(["w"] * 50),
         ),
-        bf(
-            2, has_review=True, my_rating=5, title="Short", review_text="short one here"
-        ),
+        bf(2, has_review=True, my_rating=5, title="Short", review_text="short one here"),
         bf(3, has_review=False, title="NoReview"),
     ]
     best = best_reviews(facts, top=5)

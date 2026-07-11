@@ -26,7 +26,5 @@ class SentenceTransformerEmbedder:
         return cast("list[list[float]]", vectors.tolist())
 
     def embed_query(self, text: str) -> list[float]:
-        vector = self._model.encode(
-            self._QUERY_INSTRUCTION + text, normalize_embeddings=True
-        )
+        vector = self._model.encode(self._QUERY_INSTRUCTION + text, normalize_embeddings=True)
         return cast("list[float]", vector.tolist())

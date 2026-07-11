@@ -30,9 +30,7 @@ def _year(value: str | None) -> int:
 
 @dataclass(frozen=True)
 class Hygiene:
-    undated_reads: list[
-        BookFact
-    ]  # read but no Date Read -> invisible to stats/challenge
+    undated_reads: list[BookFact]  # read but no Date Read -> invisible to stats/challenge
     unrated_reads: list[BookFact]  # read but never scored
 
 
@@ -140,16 +138,12 @@ def shelf_plan(facts: Sequence[BookFact], min_books: int = 3) -> list[ProposedSh
     for name, books in by_author.items():
         if len(books) >= min_books:
             shelves.append(
-                ProposedShelf(
-                    name, "author", len(books), tuple(b.title for b in books[:3])
-                )
+                ProposedShelf(name, "author", len(books), tuple(b.title for b in books[:3]))
             )
     for name, books in by_era.items():
         if len(books) >= min_books:
             shelves.append(
-                ProposedShelf(
-                    name, "era", len(books), tuple(b.title for b in books[:3])
-                )
+                ProposedShelf(name, "era", len(books), tuple(b.title for b in books[:3]))
             )
     shelves.sort(key=lambda s: (-s.book_count, s.name))
     return shelves

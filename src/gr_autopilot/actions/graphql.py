@@ -4,9 +4,7 @@ from __future__ import annotations
 # docs/superpowers/research/write-flows-captured.md). Auth is a short-lived JWT
 # the book page mints in __NEXT_DATA__.props.pageProps.jwtToken; mutations target
 # the book GID (kca://book/...), not the numeric legacyId.
-APPSYNC_URL = (
-    "https://kxbwmqov6jgg3daaamb744ycu4.appsync-api.us-east-1.amazonaws.com/graphql"
-)
+APPSYNC_URL = "https://kxbwmqov6jgg3daaamb744ycu4.appsync-api.us-east-1.amazonaws.com/graphql"
 
 _SHELVE_MUTATION = (
     "mutation ShelveBook($input: ShelveBookInput!) { "
@@ -23,8 +21,12 @@ _UNSHELVE_MUTATION = (
 # RateBook/UnrateBook discovered in the app's JS bundles (operation names verified read-only).
 # Input shape {id, rating} CONFIRMED live on 2026-06-24 via a no-op re-rating through
 # `gr apply` (returned 200, no errors). Selection sets are minimal/provisional.
-_RATE_MUTATION = "mutation RateBook($input: RateBookInput!) { rateBook(input: $input) { __typename } }"
-_UNRATE_MUTATION = "mutation UnrateBook($input: UnrateBookInput!) { unrateBook(input: $input) { __typename } }"
+_RATE_MUTATION = (
+    "mutation RateBook($input: RateBookInput!) { rateBook(input: $input) { __typename } }"
+)
+_UNRATE_MUTATION = (
+    "mutation UnrateBook($input: UnrateBookInput!) { unrateBook(input: $input) { __typename } }"
+)
 
 
 def build_rate_request(gid: str, rating: int) -> dict[str, object]:

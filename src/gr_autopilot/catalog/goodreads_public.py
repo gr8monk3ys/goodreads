@@ -28,9 +28,7 @@ class GoodreadsPublicCatalog:
         url = f"{_BASE}{int(book_id)}"
         request = urllib.request.Request(url, headers={"User-Agent": _UA})
         try:
-            with urllib.request.urlopen(
-                request, timeout=self._timeout
-            ) as resp:  # nosec B310 - fixed https host
+            with urllib.request.urlopen(request, timeout=self._timeout) as resp:  # nosec B310 - fixed https host
                 html = resp.read().decode("utf-8", "replace")
             return parse_book_meta(extract_next_data(html))
         except (ValueError, OSError):

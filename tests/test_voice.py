@@ -45,17 +45,11 @@ def test_inmemory_upsert_is_idempotent() -> None:
 
 def _seed(conn: sqlite3.Connection) -> None:
     conn.execute("INSERT INTO books (book_id, title, my_rating) VALUES (1, 'A', 5)")
-    conn.execute(
-        "INSERT INTO reviews (book_id, review_text) VALUES (1, 'space war robot')"
-    )
+    conn.execute("INSERT INTO reviews (book_id, review_text) VALUES (1, 'space war robot')")
     conn.execute("INSERT INTO books (book_id, title, my_rating) VALUES (2, 'B', 3)")
-    conn.execute(
-        "INSERT INTO reviews (book_id, review_text) VALUES (2, 'love magic ocean')"
-    )
+    conn.execute("INSERT INTO reviews (book_id, review_text) VALUES (2, 'love magic ocean')")
     conn.execute("INSERT INTO books (book_id, title, my_rating) VALUES (3, 'C', 4)")
-    conn.execute(
-        "INSERT INTO reviews (book_id, review_text) VALUES (3, '')"
-    )  # empty -> skipped
+    conn.execute("INSERT INTO reviews (book_id, review_text) VALUES (3, '')")  # empty -> skipped
     conn.commit()
 
 
@@ -89,9 +83,7 @@ def test_retrieve_where_filter(conn: sqlite3.Connection) -> None:
 
 def test_build_index_includes_genre_metadata(conn: sqlite3.Connection) -> None:
     conn.execute("INSERT INTO books (book_id, title, my_rating) VALUES (1, 'A', 5)")
-    conn.execute(
-        "INSERT INTO reviews (book_id, review_text) VALUES (1, 'space war robot')"
-    )
+    conn.execute("INSERT INTO reviews (book_id, review_text) VALUES (1, 'space war robot')")
     conn.commit()
     set_book_genres(conn, 1, ("Sci-Fi",))
     store = InMemoryVectorStore()

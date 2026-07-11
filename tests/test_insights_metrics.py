@@ -80,9 +80,7 @@ def test_review_coverage_counts_targets() -> None:
     facts = [
         bf(1, my_rating=5, has_review=True),  # reviewed
         bf(2, my_rating=4, has_review=False),  # target: read+rated+no review
-        bf(
-            3, my_rating=0, has_review=False
-        ),  # read, unrated, no review -> not a target
+        bf(3, my_rating=0, has_review=False),  # read, unrated, no review -> not a target
         bf(4, exclusive_shelf="to-read"),  # excluded
     ]
     c = review_coverage(facts)
@@ -97,9 +95,7 @@ def test_tbr_shape_size_velocity_and_authors() -> None:
         bf(1, exclusive_shelf="to-read", date_added="2024/01/01", author="Poe"),
         bf(2, exclusive_shelf="to-read", date_added="2025/02/01", author="Poe"),
         bf(3, exclusive_shelf="to-read", date_added="2025/03/01", author="Wilde"),
-        bf(
-            4, exclusive_shelf="to-read", date_added="2026/01/01", author="X"
-        ),  # partial year
+        bf(4, exclusive_shelf="to-read", date_added="2026/01/01", author="X"),  # partial year
         bf(5, exclusive_shelf="read"),  # excluded
     ]
     t = tbr_shape(facts)

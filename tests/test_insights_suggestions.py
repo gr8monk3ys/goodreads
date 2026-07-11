@@ -31,10 +31,7 @@ def test_tbr_triage_fires_high_on_large_pile() -> None:
 
 
 def test_author_shelves_lists_stacked_authors() -> None:
-    facts = [
-        BookFact(book_id=i, exclusive_shelf="to-read", author="Poe")
-        for i in range(1, 5)
-    ]
+    facts = [BookFact(book_id=i, exclusive_shelf="to-read", author="Poe") for i in range(1, 5)]
     s = by_key(facts)
     assert "author_shelves" in s
     assert "Poe" in s["author_shelves"].items[0]  # type: ignore[attr-defined]

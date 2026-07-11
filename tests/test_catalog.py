@@ -90,9 +90,7 @@ def test_enrich_genres_populates_and_is_idempotent(conn: sqlite3.Connection) -> 
         }
     )
     assert enrich_genres(conn, catalog) == 2
-    rows = conn.execute(
-        "SELECT genre FROM book_genres WHERE book_id = 1 ORDER BY genre"
-    ).fetchall()
+    rows = conn.execute("SELECT genre FROM book_genres WHERE book_id = 1 ORDER BY genre").fetchall()
     assert [r["genre"] for r in rows] == ["Fantasy", "Fiction"]
     # second run: nothing missing -> no fetches
     catalog.calls.clear()
@@ -102,7 +100,5 @@ def test_enrich_genres_populates_and_is_idempotent(conn: sqlite3.Connection) -> 
 
 def test_enrich_skips_books_with_no_genres(conn: sqlite3.Connection) -> None:
     _seed_books(conn)
-    catalog = FakeCatalog(
-        {1: BookMeta(book_id=1, title="A", genres=())}
-    )  # book 2 absent -> None
+    catalog = FakeCatalog({1: BookMeta(book_id=1, title="A", genres=())})  # book 2 absent -> None
     assert enrich_genres(conn, catalog) == 0

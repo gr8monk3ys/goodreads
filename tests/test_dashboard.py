@@ -45,17 +45,13 @@ def test_dashboard_opens_with_a_start_here_launch_sequence() -> None:
     # the launch card appears before the flat numbered sections
     assert out.index("Start here") < out.index("Rate ")
     assert "This week" in out  # the campaign's cadence framing
-    assert out.index("Siddhartha") < out.index(
-        "A Lesser Read"
-    )  # leverage order, not file order
+    assert out.index("Siddhartha") < out.index("A Lesser Read")  # leverage order, not file order
 
 
 def test_dashboard_escapes_markup_in_titles_everywhere() -> None:
     # a hostile title must never reach the page raw — not in the canon line, launch card,
     # or any section (regression guard for the canon-subtitle injection hole).
-    facts = [
-        bf(1, my_rating=5, title="<script>x</script>", author="A", has_review=False)
-    ]
+    facts = [bf(1, my_rating=5, title="<script>x</script>", author="A", has_review=False)]
     out = build_dashboard_html(facts, draft_counts={}, drafted_ids=set())
     assert "<script>x</script>" not in out
     assert "&lt;script&gt;x&lt;/script&gt;" in out

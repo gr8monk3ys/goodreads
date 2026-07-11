@@ -175,11 +175,7 @@ def _launch_card(plan: LaunchPlan) -> str:
         out.append(f'<h3 class="lh">{_e(p.title)}</h3>')
         out.append(f'<p class="lblurb">{_e(p.blurb)}</p>')
         for j, step in enumerate(p.steps):
-            detail = (
-                f' <span class="muted">— {_e(step.detail)}</span>'
-                if step.detail
-                else ""
-            )
+            detail = f' <span class="muted">— {_e(step.detail)}</span>' if step.detail else ""
             out.append(_task(f"L{p.key}{j}", f"{_e(step.text)}{detail}"))
     out.append("</div>")
     return "\n".join(out)
@@ -216,9 +212,7 @@ def build_dashboard_html(
     ]
 
     canon = " · ".join(_e(t) for t in sig.five_star_titles) or "your standout reads"
-    s.append(
-        "<div class='kick'>Goodreads · target state · <span id='tally'></span></div>"
-    )
+    s.append("<div class='kick'>Goodreads · target state · <span id='tally'></span></div>")
     s.append("<h1>Your reading, leveled up</h1>")
     s.append(
         f"<p class='sub'>A reader of {canon}. Everything below is yours to do by hand on "
@@ -253,9 +247,7 @@ def build_dashboard_html(
 
     # 1. Ratings
     s.append(f"<h2>1 · Rate {m.ratings.n_unrated} books</h2><div class='card'>")
-    s.append(
-        "<p class='muted'>Suggested stars in parentheses — your call; change freely.</p>"
-    )
+    s.append("<p class='muted'>Suggested stars in parentheses — your call; change freely.</p>")
     for i, f in enumerate(hyg.unrated_reads):
         sug = props.get(f.book_id)
         tag = f' <span class="star">({"&#9733;" * sug})</span>' if sug else ""
@@ -274,9 +266,7 @@ def build_dashboard_html(
     s.append("</div>")
 
     # 3. Shelf
-    s.append(
-        "<h2>3 · Create the <code>existential-classics</code> shelf</h2><div class='card'>"
-    )
+    s.append("<h2>3 · Create the <code>existential-classics</code> shelf</h2><div class='card'>")
     s.append(
         _task(
             "shelfmake",
@@ -289,12 +279,8 @@ def build_dashboard_html(
     s.append("</div>")
 
     # 4. Dates
-    s.append(
-        f"<h2>4 · Backfill {len(hyg.undated_reads)} read-dates</h2><div class='card'>"
-    )
-    s.append(
-        "<p class='muted'>Even just the year fixes your stats & Reading Challenge.</p>"
-    )
+    s.append(f"<h2>4 · Backfill {len(hyg.undated_reads)} read-dates</h2><div class='card'>")
+    s.append("<p class='muted'>Even just the year fixes your stats & Reading Challenge.</p>")
     for i, f in enumerate(hyg.undated_reads):
         s.append(_task(f"date{i}", f"{_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
@@ -303,9 +289,7 @@ def build_dashboard_html(
     if dups:
         s.append(f"<h2>5 · Merge {len(dups)} duplicate(s)</h2><div class='card'>")
         for i, (title, group) in enumerate(dups):
-            s.append(
-                _task(f"dup{i}", f"Merge {len(group)} editions of <b>{_e(title)}</b>")
-            )
+            s.append(_task(f"dup{i}", f"Merge {len(group)} editions of <b>{_e(title)}</b>"))
         s.append("</div>")
 
     # 6. Bio + signature
@@ -322,9 +306,7 @@ def build_dashboard_html(
     if sig.top_authors:
         s.append(
             "<p style='margin-top:14px'>Signature authors: "
-            + "".join(
-                f"<span class='pill'>{_e(a)}</span>" for a, _ in sig.top_authors[:6]
-            )
+            + "".join(f"<span class='pill'>{_e(a)}</span>" for a, _ in sig.top_authors[:6])
             + "</p>"
         )
     if sig.top_eras:
@@ -337,8 +319,7 @@ def build_dashboard_html(
 
     # 7. Social
     s.append(
-        "<h2>7 · Follow &amp; engage <span class='muted'>(do by hand)</span></h2>"
-        "<div class='card'>"
+        "<h2>7 · Follow &amp; engage <span class='muted'>(do by hand)</span></h2><div class='card'>"
     )
     for i, t in enumerate(
         [

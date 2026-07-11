@@ -33,11 +33,7 @@ def parse_book_meta(next_data: dict[str, object]) -> BookMeta:
     """Extract book_id (legacyId), title, and genres from a parsed __NEXT_DATA__ blob."""
     apollo = _apollo_state(next_data)
     book = next(
-        (
-            v
-            for v in apollo.values()
-            if isinstance(v, dict) and v.get("__typename") == "Book"
-        ),
+        (v for v in apollo.values() if isinstance(v, dict) and v.get("__typename") == "Book"),
         None,
     )
     if book is None:
@@ -54,9 +50,7 @@ def parse_book_meta(next_data: dict[str, object]) -> BookMeta:
     legacy_id = book.get("legacyId")
     return BookMeta(
         book_id=(
-            int(legacy_id)
-            if isinstance(legacy_id, int | str) and str(legacy_id).isdigit()
-            else 0
+            int(legacy_id) if isinstance(legacy_id, int | str) and str(legacy_id).isdigit() else 0
         ),
         title=str(book.get("title") or ""),
         genres=tuple(genres),

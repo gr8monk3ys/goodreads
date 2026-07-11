@@ -19,9 +19,7 @@ class ActionResult:
 
 def payload_hash(action_type: str, payload: dict[str, object]) -> str:
     """Stable hash of an action + its payload — the idempotency key."""
-    blob = json.dumps(
-        {"action_type": action_type, "payload": payload}, sort_keys=True, default=str
-    )
+    blob = json.dumps({"action_type": action_type, "payload": payload}, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 

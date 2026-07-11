@@ -24,9 +24,7 @@ _BOOK_URL = "https://www.goodreads.com/book/show/"
 class GoodreadsGraphQLBackend:
     """Performs writes by scraping a fresh JWT+GID from the book page, then POSTing GraphQL."""
 
-    def __init__(
-        self, page: Any
-    ) -> None:  # a stealthed, storage_state-authenticated Page
+    def __init__(self, page: Any) -> None:  # a stealthed, storage_state-authenticated Page
         self._page = page
 
     def _jwt_and_gid(self, book_id: int) -> tuple[str, str]:
@@ -62,9 +60,7 @@ class GoodreadsGraphQLBackend:
         self._post(jwt, build_rate_request(gid, rating))
 
     def set_date(self, book_id: int, date_read: str) -> None:
-        raise NotImplementedError(
-            "date-read mutation not yet captured (see capture runbook)"
-        )
+        raise NotImplementedError("date-read mutation not yet captured (see capture runbook)")
 
     def post_review(self, book_id: int, text: str, rating: int) -> None:
         raise NotImplementedError("review mutation not yet captured")

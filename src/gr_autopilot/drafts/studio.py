@@ -24,14 +24,10 @@ def has_draft(drafts_dir: Path, book_id: int) -> bool:
     return any(drafts_dir.glob(f"{book_id}-*.md"))
 
 
-def write_draft(
-    drafts_dir: Path, meta: DraftMeta, body: str, *, overwrite: bool = False
-) -> Path:
+def write_draft(drafts_dir: Path, meta: DraftMeta, body: str, *, overwrite: bool = False) -> Path:
     drafts_dir.mkdir(parents=True, exist_ok=True)
     if not overwrite and has_draft(drafts_dir, meta.book_id):
-        raise FileExistsError(
-            f"draft for book {meta.book_id} exists; refusing to clobber edits"
-        )
+        raise FileExistsError(f"draft for book {meta.book_id} exists; refusing to clobber edits")
     path = draft_path(drafts_dir, meta)
     path.write_text(render_draft(meta, body), encoding="utf-8")
     return path

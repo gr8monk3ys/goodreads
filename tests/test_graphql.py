@@ -45,11 +45,7 @@ def test_parse_jwt() -> None:
 
 def test_parse_gid_from_id_field() -> None:
     nd: dict[str, object] = {
-        "props": {
-            "pageProps": {
-                "apolloState": {"Book:abc": {"__typename": "Book", "id": GID}}
-            }
-        }
+        "props": {"pageProps": {"apolloState": {"Book:abc": {"__typename": "Book", "id": GID}}}}
     }
     assert parse_gid(nd) == GID
 

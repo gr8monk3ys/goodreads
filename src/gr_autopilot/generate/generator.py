@@ -37,9 +37,7 @@ def generate_review(
     exemplars = retrieve(f"{book.title} by {book.author}", embedder, store, k=k)
     system_blocks = build_system_blocks(exemplars)
     user_text = build_user_text(book, target_words)
-    result = client.generate(
-        system_blocks, user_text, model=model, max_tokens=max_tokens
-    )
+    result = client.generate(system_blocks, user_text, model=model, max_tokens=max_tokens)
     word_count = len(result.text.split())
     low, high = target_words * (1 - tolerance), target_words * (1 + tolerance)
     return ReviewDraft(

@@ -23,9 +23,7 @@ def _migrate_books(conn: sqlite3.Connection) -> None:
     existing = {row[1] for row in conn.execute("PRAGMA table_info(books)")}
     for name, decl in _BOOKS_ADDED_COLUMNS.items():
         if name not in existing:
-            conn.execute(
-                f"ALTER TABLE books ADD COLUMN {name} {decl}"
-            )  # noqa: S608 (fixed names)
+            conn.execute(f"ALTER TABLE books ADD COLUMN {name} {decl}")  # noqa: S608 (fixed names)
 
 
 def init_db(conn: sqlite3.Connection) -> None:

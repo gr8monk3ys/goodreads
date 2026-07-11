@@ -35,8 +35,7 @@ def build_system_blocks(
     retriever returns them deterministically by score) to keep the prefix byte-stable.
     """
     examples = "\n\n".join(
-        f"Example review (rating {e.metadata.get('rating', '?')}/5):\n{e.text}"
-        for e in exemplars
+        f"Example review (rating {e.metadata.get('rating', '?')}/5):\n{e.text}" for e in exemplars
     )
     text = f"{guidelines}\n\n{examples}\n\n{ANTI_AI_TELLS}"
     return [{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}]
