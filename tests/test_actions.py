@@ -65,7 +65,9 @@ def test_dry_run_does_not_call_backend(conn: sqlite3.Connection) -> None:
     res = _executor(conn, backend, dry_run=True).post_review(11, "great book", 5)
     assert res.status == "dry_run"
     assert backend.calls == []
-    n = conn.execute("SELECT COUNT(*) FROM actions_log WHERE status='dry_run'").fetchone()[0]
+    n = conn.execute(
+        "SELECT COUNT(*) FROM actions_log WHERE status='dry_run'"
+    ).fetchone()[0]
     assert n == 1
 
 
@@ -94,11 +96,15 @@ def test_kill_switch_env_blocks_write(conn: sqlite3.Connection) -> None:
     assert backend.calls == []
 
 
-def test_kill_switch_stop_file_blocks_write(conn: sqlite3.Connection, tmp_path: Path) -> None:
+def test_kill_switch_stop_file_blocks_write(
+    conn: sqlite3.Connection, tmp_path: Path
+) -> None:
     stop = tmp_path / "STOP"
     stop.write_text("stop")
     backend = RecordingBackend()
-    res = _executor(conn, backend, dry_run=False, stop_file=stop).post_review(11, "x", 5)
+    res = _executor(conn, backend, dry_run=False, stop_file=stop).post_review(
+        11, "x", 5
+    )
     assert res.status == "failed"
     assert backend.calls == []
 

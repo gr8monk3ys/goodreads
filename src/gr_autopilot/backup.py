@@ -13,7 +13,9 @@ from datetime import datetime
 from pathlib import Path
 
 
-def backup_artifacts(sources: Sequence[Path], dest_dir: Path, *, timestamp: datetime) -> Path:
+def backup_artifacts(
+    sources: Sequence[Path], dest_dir: Path, *, timestamp: datetime
+) -> Path:
     """Tar the existing sources into dest_dir/gr-backup-YYYYMMDD-HHMMSS.tar.gz.
 
     Missing sources are skipped (a fresh clone may not have drafts yet); if
@@ -22,7 +24,9 @@ def backup_artifacts(sources: Sequence[Path], dest_dir: Path, *, timestamp: date
     """
     present = [src for src in sources if src.exists()]
     if not present:
-        raise ValueError(f"nothing to back up: none of {[str(s) for s in sources]} exist")
+        raise ValueError(
+            f"nothing to back up: none of {[str(s) for s in sources]} exist"
+        )
 
     dest_dir.mkdir(parents=True, exist_ok=True)
     archive = dest_dir / f"gr-backup-{timestamp:%Y%m%d-%H%M%S}.tar.gz"

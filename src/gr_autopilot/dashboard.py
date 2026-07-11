@@ -22,8 +22,13 @@ from gr_autopilot.presence import signature
 
 READ = "read"
 _EXISTENTIAL_AUTHORS = {
-    "Fyodor Dostoevsky", "Hermann Hesse", "Franz Kafka", "Aldous Huxley",
-    "Viktor E. Frankl", "George Orwell", "Theodore John Kaczynski",
+    "Fyodor Dostoevsky",
+    "Hermann Hesse",
+    "Franz Kafka",
+    "Aldous Huxley",
+    "Viktor E. Frankl",
+    "George Orwell",
+    "Theodore John Kaczynski",
 }
 
 _CSS = """
@@ -158,17 +163,23 @@ def _viz(title: str, rows: Sequence[tuple[str, int]]) -> str:
 
 def _launch_card(plan: LaunchPlan) -> str:
     """The leading 'Start here' card — the sequenced campaign, not the flat board."""
-    out = ['<div class="card launch"><h2>Start here — your launch sequence</h2>',
-           f'<p class="muted">{plan.n_review_targets} reviews to write · '
-           f'~{plan.reviews_per_week}/week · through the backlog in ~{plan.weeks_to_finish} '
-           "weeks. Spread it out instead of doing it all at once — steadier tends to stick.</p>"]
+    out = [
+        '<div class="card launch"><h2>Start here — your launch sequence</h2>',
+        f'<p class="muted">{plan.n_review_targets} reviews to write · '
+        f"~{plan.reviews_per_week}/week · through the backlog in ~{plan.weeks_to_finish} "
+        "weeks. Spread it out instead of doing it all at once — steadier tends to stick.</p>",
+    ]
     for p in plan.phases:
         if p.key == "cadence":
             continue  # the full review list already lives in section 2 below
         out.append(f'<h3 class="lh">{_e(p.title)}</h3>')
         out.append(f'<p class="lblurb">{_e(p.blurb)}</p>')
         for j, step in enumerate(p.steps):
-            detail = f' <span class="muted">— {_e(step.detail)}</span>' if step.detail else ""
+            detail = (
+                f' <span class="muted">— {_e(step.detail)}</span>'
+                if step.detail
+                else ""
+            )
             out.append(_task(f"L{p.key}{j}", f"{_e(step.text)}{detail}"))
     out.append("</div>")
     return "\n".join(out)
@@ -197,16 +208,22 @@ def build_dashboard_html(
     )
     n_read = m.reviews.n_read
 
-    s: list[str] = ["<!doctype html><html lang='en'><head><meta charset='utf-8'>",
-                    "<meta name='viewport' content='width=device-width,initial-scale=1'>",
-                    "<title>Your Goodreads — target state</title>",
-                    f"<style>{_CSS}</style></head><body><div class='wrap'>"]
+    s: list[str] = [
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>",
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>",
+        "<title>Your Goodreads — target state</title>",
+        f"<style>{_CSS}</style></head><body><div class='wrap'>",
+    ]
 
     canon = " · ".join(_e(t) for t in sig.five_star_titles) or "your standout reads"
-    s.append("<div class='kick'>Goodreads · target state · <span id='tally'></span></div>")
+    s.append(
+        "<div class='kick'>Goodreads · target state · <span id='tally'></span></div>"
+    )
     s.append("<h1>Your reading, leveled up</h1>")
-    s.append(f"<p class='sub'>A reader of {canon}. Everything below is yours to do by hand on "
-             "Goodreads — tick each off as you go; your progress is saved in this browser.</p>")
+    s.append(
+        f"<p class='sub'>A reader of {canon}. Everything below is yours to do by hand on "
+        "Goodreads — tick each off as you go; your progress is saved in this browser.</p>"
+    )
 
     # Scorecards: current -> target with a fill meter.
     s.append("<div class='scards'>")
@@ -236,7 +253,9 @@ def build_dashboard_html(
 
     # 1. Ratings
     s.append(f"<h2>1 · Rate {m.ratings.n_unrated} books</h2><div class='card'>")
-    s.append("<p class='muted'>Suggested stars in parentheses — your call; change freely.</p>")
+    s.append(
+        "<p class='muted'>Suggested stars in parentheses — your call; change freely.</p>"
+    )
     for i, f in enumerate(hyg.unrated_reads):
         sug = props.get(f.book_id)
         tag = f' <span class="star">({"&#9733;" * sug})</span>' if sug else ""
@@ -246,23 +265,36 @@ def build_dashboard_html(
     # 2. Reviews
     s.append(f"<h2>2 · Post {len(unreviewed)} reviews</h2><div class='card'>")
     ready = drafts.get("draft", 0) + drafts.get("approved", 0)
-    s.append(f"<p class='muted'>{ready} editable drafts are waiting in "
-             "<code>drafts/reviews/</code> — edit in your voice, then post.</p>")
+    s.append(
+        f"<p class='muted'>{ready} editable drafts are waiting in "
+        "<code>drafts/reviews/</code> — edit in your voice, then post.</p>"
+    )
     for i, f in enumerate(unreviewed):
         s.append(_task(f"rev{i}", f"{_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
 
     # 3. Shelf
-    s.append("<h2>3 · Create the <code>existential-classics</code> shelf</h2><div class='card'>")
-    s.append(_task("shelfmake", "Create a custom shelf named <b>existential-classics</b>, "
-                                "then feature it on your profile"))
+    s.append(
+        "<h2>3 · Create the <code>existential-classics</code> shelf</h2><div class='card'>"
+    )
+    s.append(
+        _task(
+            "shelfmake",
+            "Create a custom shelf named <b>existential-classics</b>, "
+            "then feature it on your profile",
+        )
+    )
     for i, f in enumerate(members):
         s.append(_task(f"shelf{i}", f"Add: {_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
 
     # 4. Dates
-    s.append(f"<h2>4 · Backfill {len(hyg.undated_reads)} read-dates</h2><div class='card'>")
-    s.append("<p class='muted'>Even just the year fixes your stats & Reading Challenge.</p>")
+    s.append(
+        f"<h2>4 · Backfill {len(hyg.undated_reads)} read-dates</h2><div class='card'>"
+    )
+    s.append(
+        "<p class='muted'>Even just the year fixes your stats & Reading Challenge.</p>"
+    )
     for i, f in enumerate(hyg.undated_reads):
         s.append(_task(f"date{i}", f"{_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
@@ -271,38 +303,57 @@ def build_dashboard_html(
     if dups:
         s.append(f"<h2>5 · Merge {len(dups)} duplicate(s)</h2><div class='card'>")
         for i, (title, group) in enumerate(dups):
-            s.append(_task(f"dup{i}", f"Merge {len(group)} editions of <b>{_e(title)}</b>"))
+            s.append(
+                _task(f"dup{i}", f"Merge {len(group)} editions of <b>{_e(title)}</b>")
+            )
         s.append("</div>")
 
     # 6. Bio + signature
     s.append("<h2>6 · Bio &amp; signature</h2><div class='card'>")
     if bio:
         s.append(f"<div class='bio'>{_e(bio)}</div>")
-    s.append(_task("bio", "Paste an edited bio into Settings &rarr; Profile "
-                          "<span class='muted'>— make the words yours</span>"))
+    s.append(
+        _task(
+            "bio",
+            "Paste an edited bio into Settings &rarr; Profile "
+            "<span class='muted'>— make the words yours</span>",
+        )
+    )
     if sig.top_authors:
-        s.append("<p style='margin-top:14px'>Signature authors: " +
-                 "".join(f"<span class='pill'>{_e(a)}</span>" for a, _ in sig.top_authors[:6]) +
-                 "</p>")
+        s.append(
+            "<p style='margin-top:14px'>Signature authors: "
+            + "".join(
+                f"<span class='pill'>{_e(a)}</span>" for a, _ in sig.top_authors[:6]
+            )
+            + "</p>"
+        )
     if sig.top_eras:
-        s.append("<p>Eras you live in: " +
-                 "".join(f"<span class='pill'>{_e(b)}</span>" for b, _ in sig.top_eras[:5]) +
-                 "</p>")
+        s.append(
+            "<p>Eras you live in: "
+            + "".join(f"<span class='pill'>{_e(b)}</span>" for b, _ in sig.top_eras[:5])
+            + "</p>"
+        )
     s.append("</div>")
 
     # 7. Social
-    s.append("<h2>7 · Follow &amp; engage <span class='muted'>(do by hand)</span></h2>"
-             "<div class='card'>")
-    for i, t in enumerate([
-        "Open your 5&#9733; books &rarr; Community Reviews; follow ~10 reviewers you like",
-        "Follow your signature authors' Goodreads pages",
-        "Each week: like + one thoughtful comment on a review of a book you've read",
-    ]):
+    s.append(
+        "<h2>7 · Follow &amp; engage <span class='muted'>(do by hand)</span></h2>"
+        "<div class='card'>"
+    )
+    for i, t in enumerate(
+        [
+            "Open your 5&#9733; books &rarr; Community Reviews; follow ~10 reviewers you like",
+            "Follow your signature authors' Goodreads pages",
+            "Each week: like + one thoughtful comment on a review of a book you've read",
+        ]
+    ):
         s.append(_task(f"social{i}", t))
     s.append("</div>")
 
-    s.append("<footer>Generated by gr-autopilot · read-only · nothing here was posted for you."
-             "<br>Sequenced campaign: <code>gr launch</code> · live ratings: <code>gr apply</code>."
-             "</footer>")
+    s.append(
+        "<footer>Generated by gr-autopilot · read-only · nothing here was posted for you."
+        "<br>Sequenced campaign: <code>gr launch</code> · live ratings: <code>gr apply</code>."
+        "</footer>"
+    )
     s.append(f"</div><script>{_JS}</script></body></html>")
     return "\n".join(s)

@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from gr_autopilot.ingest.csv_parser import clean_isbn, coerce_int, norm_review, parse_export
+from gr_autopilot.ingest.csv_parser import (
+    clean_isbn,
+    coerce_int,
+    norm_review,
+    parse_export,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
 

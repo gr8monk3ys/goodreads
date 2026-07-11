@@ -82,7 +82,9 @@ def insights(
 
     facts = load_facts(conn)
     if not facts:
-        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        typer.echo(
+            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
+        )
         return
 
     metrics = compute(facts)
@@ -103,7 +105,9 @@ def plan(*, top: int = 5) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        typer.echo(
+            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
+        )
         return
 
     metrics = compute(facts)
@@ -141,7 +145,9 @@ def curate(*, top: int = 20) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        typer.echo(
+            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
+        )
         return
 
     h = hygiene(facts)
@@ -158,7 +164,9 @@ def curate(*, top: int = 20) -> None:
         typer.echo(f"  - {s.name} [{s.kind}] — {s.book_count} books")
 
     typer.echo("\n## Data hygiene")
-    typer.echo(f"  {len(h.unrated_reads)} unrated reads · {len(h.undated_reads)} undated reads")
+    typer.echo(
+        f"  {len(h.unrated_reads)} unrated reads · {len(h.undated_reads)} undated reads"
+    )
     for b in h.unrated_reads[:top]:
         typer.echo(f"  - rate: {b.title} — {b.author}")
     for b in h.undated_reads[:top]:
@@ -186,7 +194,9 @@ def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        typer.echo(
+            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
+        )
         return
 
     # pull proposed ratings from an existing write-plan.csv, if present
@@ -223,7 +233,9 @@ def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = 3) -> Non
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        typer.echo(
+            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
+        )
         return
 
     drafted = {f.book_id for f in facts if has_draft(settings.drafts_dir, f.book_id)}
@@ -272,7 +284,9 @@ def presence(*, top: int = 5) -> None:
     conn = _open_db(settings)
     facts = load_facts(conn)
     if not facts:
-        typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
+        typer.echo(
+            "No library yet — run `gr ingest <goodreads_library_export.csv>` first."
+        )
         return
 
     sig = signature(facts)
@@ -284,9 +298,14 @@ def presence(*, top: int = 5) -> None:
         authors = ", ".join(f"{a} ({n})" for a, n in sig.top_authors[:top])
         typer.echo("- Signature authors: " + authors)
     if sig.top_eras:
-        typer.echo("- Eras you live in: " + ", ".join(f"{b} ({n})" for b, n in sig.top_eras[:top]))
+        typer.echo(
+            "- Eras you live in: "
+            + ", ".join(f"{b} ({n})" for b, n in sig.top_eras[:top])
+        )
     if sig.top_genres:
-        typer.echo("- Genres: " + ", ".join(f"{g} ({n})" for g, n in sig.top_genres[:top]))
+        typer.echo(
+            "- Genres: " + ", ".join(f"{g} ({n})" for g, n in sig.top_genres[:top])
+        )
 
     typer.echo("\n## Best reviews to feature")
     for r in best_reviews(facts, top=top):
@@ -347,15 +366,22 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
     all_items = parse_plan(plan_csv.read_text(encoding="utf-8"))
     ready = [it for it in all_items if not is_unfilled(it)]
     unfilled = len(all_items) - len(ready)
-    capped = max(0, len(ready) - settings.max_actions_per_run)  # blast-radius cap per run
+    capped = max(
+        0, len(ready) - settings.max_actions_per_run
+    )  # blast-radius cap per run
     items = ready[: settings.max_actions_per_run]
     stop_file = settings.db_path.parent / "STOP"
     run_id = start_run(conn, "dry_run" if dry_run else "live")
 
     if dry_run:
         ex = ActionExecutor(
-            conn, NullBackend(), run_id=run_id, settings=settings,
-            throttle=Throttle(sleeper=lambda _: None), dry_run=True, stop_file=stop_file,
+            conn,
+            NullBackend(),
+            run_id=run_id,
+            settings=settings,
+            throttle=Throttle(sleeper=lambda _: None),
+            dry_run=True,
+            stop_file=stop_file,
         )
         tally: Counter[str] = Counter(_dispatch_write(ex, it).status for it in items)
         finish_run(conn, run_id, len(items), 0, tally.get("failed", 0))
@@ -366,7 +392,9 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
             f"{would} would-write · {already} already-done · {unfilled} unfilled (skipped) · "
             f"{capped} capped (raise GR_MAX_ACTIONS_PER_RUN)"
         )
-        typer.echo("Review the plan, then `gr login` + re-run with --no-dry-run to write.")
+        typer.echo(
+            "Review the plan, then `gr login` + re-run with --no-dry-run to write."
+        )
         return
 
     from gr_autopilot.actions.graphql_backend import GoodreadsGraphQLBackend
@@ -374,11 +402,18 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
 
     with authed_page() as page:
         if not is_logged_in(page):
-            typer.echo("Not logged in — run `gr login` first (saves your browser session).")
+            typer.echo(
+                "Not logged in — run `gr login` first (saves your browser session)."
+            )
             raise typer.Exit(1)
         ex = ActionExecutor(
-            conn, GoodreadsGraphQLBackend(page), run_id=run_id, settings=settings,
-            throttle=Throttle(), dry_run=False, stop_file=stop_file,
+            conn,
+            GoodreadsGraphQLBackend(page),
+            run_id=run_id,
+            settings=settings,
+            throttle=Throttle(),
+            dry_run=False,
+            stop_file=stop_file,
         )
         results = [_dispatch_write(ex, it) for it in items]
     live: Counter[str] = Counter(r.status for r in results)

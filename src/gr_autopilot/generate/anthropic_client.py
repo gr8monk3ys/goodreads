@@ -19,7 +19,9 @@ class AnthropicChatClient:
     def __init__(self, api_key: str | None = None) -> None:
         import anthropic
 
-        self._client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
+        self._client = (
+            anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
+        )
 
     def generate(
         self,

@@ -3,15 +3,25 @@ from gr_autopilot.presence import best_reviews, signature
 
 
 def bf(book_id: int, **over: object) -> BookFact:
-    base: dict[str, object] = {"exclusive_shelf": "read", "author": "A", "title": f"B{book_id}"}
+    base: dict[str, object] = {
+        "exclusive_shelf": "read",
+        "author": "A",
+        "title": f"B{book_id}",
+    }
     base.update(over)
     return BookFact(book_id=book_id, **base)  # type: ignore[arg-type]
 
 
 def test_signature_surfaces_five_stars_authors_eras_genres() -> None:
     facts = [
-        bf(1, my_rating=5, title="Notes", author="Dostoevsky",
-           original_pub_year=1864, genres=("Classics", "Philosophy")),
+        bf(
+            1,
+            my_rating=5,
+            title="Notes",
+            author="Dostoevsky",
+            original_pub_year=1864,
+            genres=("Classics", "Philosophy"),
+        ),
         bf(2, my_rating=5, title="Siddhartha", author="Hesse", original_pub_year=1922),
         bf(3, my_rating=4, title="The Trial", author="Kafka", original_pub_year=1925),
     ]
@@ -36,8 +46,16 @@ def test_signature_authors_ranked_by_taste_not_volume() -> None:
 
 def test_best_reviews_ranks_longest_substantive_first() -> None:
     facts = [
-        bf(1, has_review=True, my_rating=4, title="Long", review_text=" ".join(["w"] * 50)),
-        bf(2, has_review=True, my_rating=5, title="Short", review_text="short one here"),
+        bf(
+            1,
+            has_review=True,
+            my_rating=4,
+            title="Long",
+            review_text=" ".join(["w"] * 50),
+        ),
+        bf(
+            2, has_review=True, my_rating=5, title="Short", review_text="short one here"
+        ),
         bf(3, has_review=False, title="NoReview"),
     ]
     best = best_reviews(facts, top=5)

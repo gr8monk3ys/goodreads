@@ -20,22 +20,32 @@ class PlaywrightBackend:
 
     def _csrf_token(self) -> str:
         # CSRF token lives in <meta name="csrf-token"> and must be re-read per page load.
-        return str(self._page.eval_on_selector('meta[name="csrf-token"]', "el => el.content"))
+        return str(
+            self._page.eval_on_selector('meta[name="csrf-token"]', "el => el.content")
+        )
 
     def post_review(self, book_id: int, text: str, rating: int) -> None:
         raise NotImplementedError("post_review: capture the review-editor flow first")
 
     def set_shelf(self, book_id: int, shelf: str) -> None:
-        raise NotImplementedError("set_shelf: confirm /shelf/add_to_shelf.json 2026 contract first")
+        raise NotImplementedError(
+            "set_shelf: confirm /shelf/add_to_shelf.json 2026 contract first"
+        )
 
     def set_rating(self, book_id: int, rating: int) -> None:
-        raise NotImplementedError("set_rating: capture the star-rating write contract first")
+        raise NotImplementedError(
+            "set_rating: capture the star-rating write contract first"
+        )
 
     def set_date(self, book_id: int, date_read: str) -> None:
-        raise NotImplementedError("set_date: capture the date-read editor contract first")
+        raise NotImplementedError(
+            "set_date: capture the date-read editor contract first"
+        )
 
     def ensure_shelf(self, name: str, *, exclusive: bool) -> None:
-        raise NotImplementedError("ensure_shelf: capture the create-shelf control first")
+        raise NotImplementedError(
+            "ensure_shelf: capture the create-shelf control first"
+        )
 
     def add_to_list(self, list_id: str, book_id: int) -> None:
         raise NotImplementedError("add_to_list: capture the Listopia add flow first")

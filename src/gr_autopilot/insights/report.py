@@ -28,7 +28,10 @@ def render(
         return _table(metrics, suggestions)
     if fmt == "json":
         return json.dumps(
-            {"metrics": asdict(metrics), "suggestions": [asdict(s) for s in suggestions]},
+            {
+                "metrics": asdict(metrics),
+                "suggestions": [asdict(s) for s in suggestions],
+            },
             indent=2,
         )
     raise ValueError(f"unknown format: {fmt!r} (expected md|table|json)")
@@ -58,9 +61,12 @@ def _markdown(m: LibraryMetrics, suggestions: Sequence[Suggestion], top: int) ->
     else:
         lines.append("- No ratings yet")
 
-    lines += ["", "## Review coverage",
-              f"- {c.n_reviewed} reviewed · **{c.n_unreviewed} unreviewed** "
-              f"({c.n_targets} rated & ready to draft)"]
+    lines += [
+        "",
+        "## Review coverage",
+        f"- {c.n_reviewed} reviewed · **{c.n_unreviewed} unreviewed** "
+        f"({c.n_targets} rated & ready to draft)",
+    ]
 
     if p.reads_by_year:
         span = " · ".join(f"{y}:{n}" for y, n in p.reads_by_year)
@@ -73,9 +79,12 @@ def _markdown(m: LibraryMetrics, suggestions: Sequence[Suggestion], top: int) ->
         lines += ["", "## Publication eras", f"- {span}"]
 
     if pg.n_with_pages:
-        lines += ["", "## Pages",
-                  f"- {pg.total_pages:,} pages across {pg.n_with_pages} read · "
-                  f"median {pg.median_pages}"]
+        lines += [
+            "",
+            "## Pages",
+            f"- {pg.total_pages:,} pages across {pg.n_with_pages} read · "
+            f"median {pg.median_pages}",
+        ]
 
     if m.authors:
         top_auth = " · ".join(f"{a} ({n})" for a, n in m.authors[:top])

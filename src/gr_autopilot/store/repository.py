@@ -82,12 +82,16 @@ def targets(conn: sqlite3.Connection, require_rating: bool = True) -> list[sqlit
 
 
 def start_run(conn: sqlite3.Connection, mode: str) -> int:
-    cur = conn.execute("INSERT INTO runs (started_at, mode) VALUES (datetime('now'), ?)", (mode,))
+    cur = conn.execute(
+        "INSERT INTO runs (started_at, mode) VALUES (datetime('now'), ?)", (mode,)
+    )
     conn.commit()
     return int(cur.lastrowid or 0)
 
 
-def finish_run(conn: sqlite3.Connection, run_id: int, planned: int, done: int, failed: int) -> None:
+def finish_run(
+    conn: sqlite3.Connection, run_id: int, planned: int, done: int, failed: int
+) -> None:
     conn.execute(
         """
         UPDATE runs SET finished_at = datetime('now'),
@@ -137,20 +141,21 @@ def already_done(
 
 
 def books_without_genres(conn: sqlite3.Connection) -> list[int]:
-    rows = conn.execute(
-        """
+    rows = conn.execute("""
         SELECT b.book_id FROM books b
         WHERE NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.book_id)
         ORDER BY b.book_id
-        """
-    ).fetchall()
+        """).fetchall()
     return [int(r["book_id"]) for r in rows]
 
 
-def set_book_genres(conn: sqlite3.Connection, book_id: int, genres: Sequence[str]) -> None:
+def set_book_genres(
+    conn: sqlite3.Connection, book_id: int, genres: Sequence[str]
+) -> None:
     for genre in genres:
         conn.execute(
-            "INSERT OR IGNORE INTO book_genres (book_id, genre) VALUES (?, ?)", (book_id, genre)
+            "INSERT OR IGNORE INTO book_genres (book_id, genre) VALUES (?, ?)",
+            (book_id, genre),
         )
     conn.commit()
 
@@ -165,21 +170,21 @@ def voice_samples(conn: sqlite3.Connection) -> list[str]:
 
 def book_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Every book with a has_review flag (non-empty review), for read-only analytics."""
-    return conn.execute(
-        """
+    return conn.execute("""
         SELECT b.book_id, b.title, b.author, b.my_rating, b.avg_rating, b.exclusive_shelf,
                b.date_read, b.date_added, b.num_pages, b.original_pub_year,
                CASE WHEN r.is_empty = 0 THEN 1 ELSE 0 END AS has_review,
                COALESCE(r.review_text, '') AS review_text
         FROM books b
         LEFT JOIN reviews r ON r.book_id = b.book_id
-        """
-    ).fetchall()
+        """).fetchall()
 
 
 def genres_by_book(conn: sqlite3.Connection) -> dict[int, tuple[str, ...]]:
     """book_id -> its genres, for analytics joins."""
     out: dict[int, list[str]] = {}
-    for row in conn.execute("SELECT book_id, genre FROM book_genres ORDER BY book_id, genre"):
+    for row in conn.execute(
+        "SELECT book_id, genre FROM book_genres ORDER BY book_id, genre"
+    ):
         out.setdefault(int(row["book_id"]), []).append(str(row["genre"]))
     return {bid: tuple(gs) for bid, gs in out.items()}

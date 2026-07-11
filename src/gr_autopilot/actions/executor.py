@@ -77,12 +77,20 @@ class ActionExecutor:
         self._throttle.wait()
         if self._dry_run:
             record_action(
-                self._conn, self._run_id, book_id, action_type, h, "dry_run", dry_run=True
+                self._conn,
+                self._run_id,
+                book_id,
+                action_type,
+                h,
+                "dry_run",
+                dry_run=True,
             )
             return ActionResult(action_type, book_id, "dry_run")
         try:
             op(self._backend)
-        except Exception as exc:  # noqa: BLE001 - record any backend failure, continue the run
+        except (
+            Exception
+        ) as exc:  # noqa: BLE001 - record any backend failure, continue the run
             record_action(
                 self._conn,
                 self._run_id,
@@ -94,7 +102,9 @@ class ActionExecutor:
                 detail=str(exc),
             )
             return ActionResult(action_type, book_id, "failed", str(exc))
-        record_action(self._conn, self._run_id, book_id, action_type, h, "done", dry_run=False)
+        record_action(
+            self._conn, self._run_id, book_id, action_type, h, "done", dry_run=False
+        )
         return ActionResult(action_type, book_id, "done")
 
     def post_review(self, book_id: int, text: str, rating: int) -> ActionResult:
@@ -107,12 +117,18 @@ class ActionExecutor:
 
     def set_shelf(self, book_id: int, shelf: str) -> ActionResult:
         return self._guarded(
-            "set_shelf", book_id, {"shelf": shelf}, lambda b: b.set_shelf(book_id, shelf)
+            "set_shelf",
+            book_id,
+            {"shelf": shelf},
+            lambda b: b.set_shelf(book_id, shelf),
         )
 
     def set_rating(self, book_id: int, rating: int) -> ActionResult:
         return self._guarded(
-            "set_rating", book_id, {"rating": rating}, lambda b: b.set_rating(book_id, rating)
+            "set_rating",
+            book_id,
+            {"rating": rating},
+            lambda b: b.set_rating(book_id, rating),
         )
 
     def set_date(self, book_id: int, date_read: str) -> ActionResult:

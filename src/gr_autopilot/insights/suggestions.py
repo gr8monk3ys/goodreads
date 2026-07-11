@@ -45,22 +45,30 @@ def suggest(m: LibraryMetrics, top: int = 10) -> list[Suggestion]:
 
     if m.ratings.n_unrated > 0:
         impact = "high" if m.ratings.n_unrated >= RATING_GAP_HIGH else "medium"
-        out.append(Suggestion(
-            key="rating_gap", goal="stats", impact=impact,
-            title=f"Rate {m.ratings.n_unrated} read books you never scored",
-            detail="Unrated reads leave your taste illegible. Rating them is the fastest, "
-                   "lowest-effort lever on how considered your profile looks.",
-        ))
+        out.append(
+            Suggestion(
+                key="rating_gap",
+                goal="stats",
+                impact=impact,
+                title=f"Rate {m.ratings.n_unrated} read books you never scored",
+                detail="Unrated reads leave your taste illegible. Rating them is the fastest, "
+                "lowest-effort lever on how considered your profile looks.",
+            )
+        )
 
     if m.reviews.n_unreviewed > 0:
         impact = "high" if m.reviews.n_unreviewed >= REVIEW_GAP_HIGH else "medium"
-        out.append(Suggestion(
-            key="review_gap", goal="presence", impact=impact,
-            title=f"Write reviews for {m.reviews.n_unreviewed} read books",
-            detail=f"{m.reviews.n_targets} are already rated — the best draft candidates. "
-                   "`gr review --dry-run` drafts them in your voice; you edit and approve "
-                   "before anything is posted.",
-        ))
+        out.append(
+            Suggestion(
+                key="review_gap",
+                goal="presence",
+                impact=impact,
+                title=f"Write reviews for {m.reviews.n_unreviewed} read books",
+                detail=f"{m.reviews.n_targets} are already rated — the best draft candidates. "
+                "`gr review --dry-run` drafts them in your voice; you edit and approve "
+                "before anything is posted.",
+            )
+        )
 
     read_rate = _recent_read_rate(m.pace.reads_by_year)
     outrunning = m.tbr.peak_adds > read_rate * TBR_VELOCITY_RATIO
@@ -71,13 +79,17 @@ def suggest(m: LibraryMetrics, top: int = 10) -> list[Suggestion]:
             if m.tbr.peak_year is not None and read_rate
             else ""
         )
-        out.append(Suggestion(
-            key="tbr_triage", goal="curation", impact=impact,
-            title=f"Triage a {m.tbr.size}-book to-read pile",
-            detail="A pile this size reads as clutter, not curation. Shortlist a near-term "
-                   "tier and let the rest be aspirational." + pace_note,
-            items=tuple(f"{a} ({n})" for a, n in m.tbr.authors[:top]),
-        ))
+        out.append(
+            Suggestion(
+                key="tbr_triage",
+                goal="curation",
+                impact=impact,
+                title=f"Triage a {m.tbr.size}-book to-read pile",
+                detail="A pile this size reads as clutter, not curation. Shortlist a near-term "
+                "tier and let the rest be aspirational." + pace_note,
+                items=tuple(f"{a} ({n})" for a, n in m.tbr.authors[:top]),
+            )
+        )
 
     combined: Counter[str] = Counter()
     for author, n in m.authors:
@@ -86,22 +98,30 @@ def suggest(m: LibraryMetrics, top: int = 10) -> list[Suggestion]:
         combined[author] += n
     stacked = [(a, n) for a, n in combined.most_common() if n >= AUTHOR_MIN]
     if stacked:
-        out.append(Suggestion(
-            key="author_shelves", goal="curation", impact="medium",
-            title=f"Turn {len(stacked)} stacked authors into shelves or reading projects",
-            detail="Authors you own/read in bulk are natural custom shelves — instant "
-                   "structure and a signal of what you go deep on.",
-            items=tuple(f"{a} ({n} books)" for a, n in stacked[:top]),
-        ))
+        out.append(
+            Suggestion(
+                key="author_shelves",
+                goal="curation",
+                impact="medium",
+                title=f"Turn {len(stacked)} stacked authors into shelves or reading projects",
+                detail="Authors you own/read in bulk are natural custom shelves — instant "
+                "structure and a signal of what you go deep on.",
+                items=tuple(f"{a} ({n} books)" for a, n in stacked[:top]),
+            )
+        )
 
     if m.pace.n_missing_date > 0:
         impact = "medium" if m.pace.n_missing_date >= DATE_HYGIENE_MEDIUM else "low"
-        out.append(Suggestion(
-            key="date_hygiene", goal="curation", impact=impact,
-            title=f"Backfill Date Read for {m.pace.n_missing_date} books",
-            detail="Undated reads are invisible to your yearly stats and the Reading "
-                   "Challenge — they make you look less active than you are.",
-        ))
+        out.append(
+            Suggestion(
+                key="date_hygiene",
+                goal="curation",
+                impact=impact,
+                title=f"Backfill Date Read for {m.pace.n_missing_date} books",
+                detail="Undated reads are invisible to your yearly stats and the Reading "
+                "Challenge — they make you look less active than you are.",
+            )
+        )
 
     if m.ratings.n_read > 0:
         five = m.ratings.histogram.get(5, 0)
@@ -109,16 +129,25 @@ def suggest(m: LibraryMetrics, top: int = 10) -> list[Suggestion]:
         if m.genres.top:
             bits.append("top genres " + ", ".join(g for g, _ in m.genres.top[:3]))
         if m.eras.by_band:
-            bits.append("you range from " + m.eras.by_band[0][0] + " to "
-                        + m.eras.by_band[-1][0])
+            bits.append(
+                "you range from "
+                + m.eras.by_band[0][0]
+                + " to "
+                + m.eras.by_band[-1][0]
+            )
         if five:
             bits.append(f"{five} five-star favorites to feature")
-        out.append(Suggestion(
-            key="signature", goal="presence", impact="low",
-            title="Lead with your reading signature",
-            detail="Make the profile say what you're about at a glance: "
-                   + ("; ".join(bits) if bits else "your standout reads and genres") + ".",
-        ))
+        out.append(
+            Suggestion(
+                key="signature",
+                goal="presence",
+                impact="low",
+                title="Lead with your reading signature",
+                detail="Make the profile say what you're about at a glance: "
+                + ("; ".join(bits) if bits else "your standout reads and genres")
+                + ".",
+            )
+        )
 
     out.sort(key=lambda s: (IMPACT_RANK[s.impact], GOAL_RANK[s.goal], s.key))
     return out

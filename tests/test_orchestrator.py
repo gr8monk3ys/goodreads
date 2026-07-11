@@ -34,7 +34,9 @@ def test_review_unreviewed_dry_run(conn: sqlite3.Connection) -> None:
     assert summary.planned == 1  # only book 22 (rated read, empty review)
     assert summary.done == 0
     assert summary.dry_run is True
-    n = conn.execute("SELECT COUNT(*) FROM actions_log WHERE status='dry_run'").fetchone()[0]
+    n = conn.execute(
+        "SELECT COUNT(*) FROM actions_log WHERE status='dry_run'"
+    ).fetchone()[0]
     assert n == 1
 
 
@@ -111,6 +113,8 @@ def test_prepare_corpus_without_catalog_skips_enrich(conn: sqlite3.Connection) -
     conn.execute("INSERT INTO books (book_id, title, my_rating) VALUES (1, 'A', 5)")
     conn.execute("INSERT INTO reviews (book_id, review_text) VALUES (1, 'great book')")
     conn.commit()
-    enriched, indexed = prepare_corpus(conn, embedder=_FakeEmbedder(), store=InMemoryVectorStore())
+    enriched, indexed = prepare_corpus(
+        conn, embedder=_FakeEmbedder(), store=InMemoryVectorStore()
+    )
     assert enriched == 0
     assert indexed == 1

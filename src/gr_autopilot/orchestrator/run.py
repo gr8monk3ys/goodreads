@@ -41,7 +41,9 @@ def review_unreviewed(
     """
     rows = targets(conn, settings.require_rating)
     cap = (
-        settings.max_actions_per_run if limit is None else min(limit, settings.max_actions_per_run)
+        settings.max_actions_per_run
+        if limit is None
+        else min(limit, settings.max_actions_per_run)
     )
     rows = rows[:cap]
 
@@ -57,7 +59,9 @@ def review_unreviewed(
 
     planned = done = failed = 0
     for row in rows:
-        book = TargetBook(title=row["title"], author=row["author"], rating=row["my_rating"])
+        book = TargetBook(
+            title=row["title"], author=row["author"], rating=row["my_rating"]
+        )
         text = generate_text(book)
         planned += 1
         result = executor.post_review(row["book_id"], text, book.rating or 0)
@@ -67,7 +71,9 @@ def review_unreviewed(
             failed += 1
 
     finish_run(conn, run_id, planned, done, failed)
-    return RunSummary(run_id=run_id, planned=planned, done=done, failed=failed, dry_run=dry_run)
+    return RunSummary(
+        run_id=run_id, planned=planned, done=done, failed=failed, dry_run=dry_run
+    )
 
 
 def prepare_corpus(
@@ -84,6 +90,8 @@ def prepare_corpus(
     (e.g. for an offline run). Genres enriched here flow into the index metadata so
     retrieval can filter by genre.
     """
-    enriched = enrich_genres(conn, catalog, limit=enrich_limit) if catalog is not None else 0
+    enriched = (
+        enrich_genres(conn, catalog, limit=enrich_limit) if catalog is not None else 0
+    )
     indexed = build_index(conn, embedder, store)
     return enriched, indexed

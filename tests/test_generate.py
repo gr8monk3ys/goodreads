@@ -39,7 +39,9 @@ class FakeChatClient:
 
 
 def _exemplar() -> Exemplar:
-    return Exemplar(id="1", text="A tight, funny little book.", score=1.0, metadata={"rating": 5})
+    return Exemplar(
+        id="1", text="A tight, funny little book.", score=1.0, metadata={"rating": 5}
+    )
 
 
 def test_system_blocks_carry_cache_control_and_examples() -> None:
@@ -52,7 +54,9 @@ def test_system_blocks_carry_cache_control_and_examples() -> None:
 
 
 def test_user_text_contains_metadata() -> None:
-    book = TargetBook(title="Dune", author="Frank Herbert", rating=5, shelves=("sci-fi",))
+    book = TargetBook(
+        title="Dune", author="Frank Herbert", rating=5, shelves=("sci-fi",)
+    )
     text = build_user_text(book, target_words=120)
     assert "Dune" in text
     assert "Frank Herbert" in text

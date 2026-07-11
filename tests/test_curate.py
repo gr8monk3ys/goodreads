@@ -52,7 +52,12 @@ def test_tbr_triage_prefers_loved_author_over_lukewarm_many() -> None:
 def test_find_duplicates_groups_by_normalized_title() -> None:
     facts = [
         bf(1, title="Brave New World", author="Aldous Huxley"),
-        bf(2, title="Brave New World", author="Aldous Huxley", exclusive_shelf="to-read"),
+        bf(
+            2,
+            title="Brave New World",
+            author="Aldous Huxley",
+            exclusive_shelf="to-read",
+        ),
         bf(3, title="1984", author="George Orwell"),
         bf(4, title="The Very Hungry Caterpillar!", author="Eric Carle"),
         bf(5, title="the very hungry caterpillar", author="Eric Carle"),
@@ -68,7 +73,13 @@ def test_find_duplicates_groups_by_normalized_title() -> None:
 
 def test_shelf_plan_proposes_author_and_era_shelves() -> None:
     facts = [
-        bf(1, author="Poe", original_pub_year=1845, title="The Raven", exclusive_shelf="to-read"),
+        bf(
+            1,
+            author="Poe",
+            original_pub_year=1845,
+            title="The Raven",
+            exclusive_shelf="to-read",
+        ),
         bf(2, author="Poe", original_pub_year=1843, title="The Black Cat"),
         bf(3, author="Poe", original_pub_year=1839, title="Usher"),
         bf(4, author="X", original_pub_year=2015, title="A"),
@@ -82,4 +93,3 @@ def test_shelf_plan_proposes_author_and_era_shelves() -> None:
     assert plan["classics"].book_count == 3  # the three pre-1900 Poe books
     assert plan["contemporary"].book_count == 3  # X, Y, Z (2000+)
     assert "20th-century" not in plan  # nothing in 1900-1999 -> below threshold
-

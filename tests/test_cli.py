@@ -10,7 +10,9 @@ runner = CliRunner()
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
 
 
-def test_insights_reports_over_library(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_insights_reports_over_library(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     runner.invoke(app, ["ingest", str(FIXTURE)])
     result = runner.invoke(app, ["insights"])
@@ -28,7 +30,9 @@ def test_insights_json_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     assert data["metrics"]["total_books"] == 3
 
 
-def test_insights_empty_db_is_friendly(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_insights_empty_db_is_friendly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     result = runner.invoke(app, ["insights"])
     assert result.exit_code == 0, result.output
@@ -44,7 +48,9 @@ def test_curate_reports_plan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     assert "On The Pile" in result.output  # the to-read book, surfaced in triage
 
 
-def test_curate_empty_db_is_friendly(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_curate_empty_db_is_friendly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     result = runner.invoke(app, ["curate"])
     assert result.exit_code == 0, result.output
@@ -123,7 +129,9 @@ def test_apply_dry_run_previews_without_writing(
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     runner.invoke(app, ["ingest", str(FIXTURE)])
     plan = tmp_path / "plan.csv"
-    plan.write_text("action,book_id,value\nset_rating,11,5\nensure_shelf,,existential-classics\n")
+    plan.write_text(
+        "action,book_id,value\nset_rating,11,5\nensure_shelf,,existential-classics\n"
+    )
     result = runner.invoke(app, ["apply", str(plan)])
     assert result.exit_code == 0, result.output
     assert "DRY RUN" in result.output
@@ -136,7 +144,9 @@ def test_apply_skips_unfilled_rating_rows(
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     runner.invoke(app, ["ingest", str(FIXTURE)])
     plan = tmp_path / "plan.csv"
-    plan.write_text("action,book_id,value\nset_rating,11,\nset_rating,22,4\n")  # one blank
+    plan.write_text(
+        "action,book_id,value\nset_rating,11,\nset_rating,22,4\n"
+    )  # one blank
     result = runner.invoke(app, ["apply", str(plan)])
     assert result.exit_code == 0, result.output
     assert "unfilled" in result.output.lower()
@@ -150,7 +160,9 @@ def test_apply_respects_max_actions_cap(
     monkeypatch.setenv("GR_MAX_ACTIONS_PER_RUN", "1")  # blast-radius cap
     runner.invoke(app, ["ingest", str(FIXTURE)])
     plan = tmp_path / "plan.csv"
-    plan.write_text("action,book_id,value\nset_shelf,11,classics\nset_shelf,22,classics\n")
+    plan.write_text(
+        "action,book_id,value\nset_shelf,11,classics\nset_shelf,22,classics\n"
+    )
     result = runner.invoke(app, ["apply", str(plan)])
     assert result.exit_code == 0, result.output
     assert "1 planned" in result.output  # only 1 of 2 within the cap
@@ -168,7 +180,9 @@ def test_apply_rejects_review_and_social_actions(
     assert result.exit_code != 0  # parse_plan rejects it
 
 
-def test_plan_aggregates_all_layers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_plan_aggregates_all_layers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts"))
     runner.invoke(app, ["ingest", str(FIXTURE)])
@@ -188,7 +202,9 @@ def test_drafts_status_lists_pending_targets(
     result = runner.invoke(app, ["drafts"])
     assert result.exit_code == 0, result.output
     assert "pending" in result.output.lower()
-    assert "Some Skim" in result.output  # the one read+rated+unreviewed target in the fixture
+    assert (
+        "Some Skim" in result.output
+    )  # the one read+rated+unreviewed target in the fixture
 
 
 def test_ingest_then_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -233,7 +249,9 @@ def test_review_invokes_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
         seen["enrich"] = enrich
         return RunSummary(run_id=7, planned=2, done=0, failed=0, dry_run=dry_run)
 
-    monkeypatch.setattr("gr_autopilot.orchestrator.pipeline.run_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(
+        "gr_autopilot.orchestrator.pipeline.run_pipeline", fake_run_pipeline
+    )
     result = runner.invoke(app, ["review", "--dry-run"])
     assert result.exit_code == 0, result.output
     assert seen["dry_run"] is True
@@ -253,7 +271,9 @@ def test_run_invokes_pipeline_with_enrich(monkeypatch: pytest.MonkeyPatch) -> No
         seen["enrich"] = enrich
         return RunSummary(run_id=9, planned=1, done=0, failed=0, dry_run=dry_run)
 
-    monkeypatch.setattr("gr_autopilot.orchestrator.pipeline.run_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(
+        "gr_autopilot.orchestrator.pipeline.run_pipeline", fake_run_pipeline
+    )
     result = runner.invoke(app, ["run", "--dry-run"])
     assert result.exit_code == 0, result.output
     assert seen["enrich"] is True  # full run enriches by default

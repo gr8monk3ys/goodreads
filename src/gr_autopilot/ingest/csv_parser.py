@@ -59,7 +59,9 @@ class BookRecord:
 
 def _row_to_record(row: dict[str, str]) -> BookRecord:
     review_html = row.get("My Review") or ""
-    shelves = tuple(s.strip() for s in (row.get("Bookshelves") or "").split(",") if s.strip())
+    shelves = tuple(
+        s.strip() for s in (row.get("Bookshelves") or "").split(",") if s.strip()
+    )
     avg = row.get("Average Rating") or ""
     return BookRecord(
         book_id=int(row["Book Id"]),

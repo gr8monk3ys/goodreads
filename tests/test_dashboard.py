@@ -3,7 +3,11 @@ from gr_autopilot.insights.metrics import BookFact
 
 
 def bf(book_id: int, **over: object) -> BookFact:
-    base: dict[str, object] = {"exclusive_shelf": "read", "author": "A", "title": f"B{book_id}"}
+    base: dict[str, object] = {
+        "exclusive_shelf": "read",
+        "author": "A",
+        "title": f"B{book_id}",
+    }
     base.update(over)
     return BookFact(book_id=book_id, **base)  # type: ignore[arg-type]
 
@@ -15,7 +19,10 @@ def test_dashboard_is_self_contained_html_with_action_sections() -> None:
         bf(3, my_rating=4, title="The Trial", author="Franz Kafka", has_review=False),
     ]
     out = build_dashboard_html(
-        facts, draft_counts={"draft": 2}, proposed_ratings={2: 3}, bio="I read to argue."
+        facts,
+        draft_counts={"draft": 2},
+        proposed_ratings={2: 3},
+        bio="I read to argue.",
     )
     assert out.startswith("<!doctype html>") and out.rstrip().endswith("</html>")
     assert "existential-classics" in out  # shelf section
@@ -38,13 +45,17 @@ def test_dashboard_opens_with_a_start_here_launch_sequence() -> None:
     # the launch card appears before the flat numbered sections
     assert out.index("Start here") < out.index("Rate ")
     assert "This week" in out  # the campaign's cadence framing
-    assert out.index("Siddhartha") < out.index("A Lesser Read")  # leverage order, not file order
+    assert out.index("Siddhartha") < out.index(
+        "A Lesser Read"
+    )  # leverage order, not file order
 
 
 def test_dashboard_escapes_markup_in_titles_everywhere() -> None:
     # a hostile title must never reach the page raw — not in the canon line, launch card,
     # or any section (regression guard for the canon-subtitle injection hole).
-    facts = [bf(1, my_rating=5, title="<script>x</script>", author="A", has_review=False)]
+    facts = [
+        bf(1, my_rating=5, title="<script>x</script>", author="A", has_review=False)
+    ]
     out = build_dashboard_html(facts, draft_counts={}, drafted_ids=set())
     assert "<script>x</script>" not in out
     assert "&lt;script&gt;x&lt;/script&gt;" in out
@@ -52,10 +63,27 @@ def test_dashboard_escapes_markup_in_titles_everywhere() -> None:
 
 def test_dashboard_renders_reading_visualizations() -> None:
     facts = [
-        bf(1, my_rating=5, date_read="2023/01/01", original_pub_year=1866,
-           genres=("classics", "fiction")),
-        bf(2, my_rating=4, date_read="2023/05/01", original_pub_year=1932, genres=("dystopia",)),
-        bf(3, my_rating=4, date_read="2024/02/01", original_pub_year=1951, genres=("classics",)),
+        bf(
+            1,
+            my_rating=5,
+            date_read="2023/01/01",
+            original_pub_year=1866,
+            genres=("classics", "fiction"),
+        ),
+        bf(
+            2,
+            my_rating=4,
+            date_read="2023/05/01",
+            original_pub_year=1932,
+            genres=("dystopia",),
+        ),
+        bf(
+            3,
+            my_rating=4,
+            date_read="2024/02/01",
+            original_pub_year=1951,
+            genres=("classics",),
+        ),
     ]
     out = build_dashboard_html(facts, draft_counts={}, drafted_ids=set())
     assert "reading in numbers" in out.lower()  # the visualization section exists

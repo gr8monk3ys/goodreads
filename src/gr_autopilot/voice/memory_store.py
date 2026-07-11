@@ -54,7 +54,9 @@ class InMemoryVectorStore:
         ):
             if where and not all(md.get(key) == val for key, val in where.items()):
                 continue
-            scored.append(Exemplar(id=id_, text=doc, score=cosine(vector, vec), metadata=md))
+            scored.append(
+                Exemplar(id=id_, text=doc, score=cosine(vector, vec), metadata=md)
+            )
         scored.sort(key=lambda e: e.score, reverse=True)
         return scored[:k]
 

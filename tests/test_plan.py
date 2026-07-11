@@ -25,7 +25,9 @@ def test_parse_plan_skips_blank_and_comment_lines() -> None:
 
 
 def test_is_unfilled_flags_blank_rating_and_date_placeholders() -> None:
-    assert is_unfilled(PlanItem("set_rating", 11, ""))  # user hasn't filled the star yet
+    assert is_unfilled(
+        PlanItem("set_rating", 11, "")
+    )  # user hasn't filled the star yet
     assert is_unfilled(PlanItem("set_date", 11, ""))
     assert not is_unfilled(PlanItem("set_rating", 11, "4"))
     assert not is_unfilled(PlanItem("set_shelf", 11, "existential-classics"))
