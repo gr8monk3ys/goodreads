@@ -137,6 +137,24 @@ def test_apply_skips_unfilled_rating_rows(tmp_path: Path, monkeypatch: pytest.Mo
     assert "1 planned" in result.output  # only the filled row is actionable
 
 
+def test_apply_dry_run_previews_add_to_list(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    plan = tmp_path / "plan.csv"
+    plan.write_text(
+        "action,book_id,value\n"
+        "add_to_list,11,best-of-2026\n"
+        "add_to_list,22,\n"  # not yet decided which list -> skipped as unfilled
+    )
+    result = runner.invoke(app, ["apply", str(plan)])
+    assert result.exit_code == 0, result.output
+    assert "DRY RUN" in result.output
+    assert "1 planned" in result.output
+    assert "1 unfilled" in result.output
+
+
 def test_apply_respects_max_actions_cap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
     monkeypatch.setenv("GR_MAX_ACTIONS_PER_RUN", "1")  # blast-radius cap

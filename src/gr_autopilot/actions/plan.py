@@ -1,8 +1,9 @@
 """Parse a write-plan CSV into typed items. The allow-list is a safety boundary.
 
-Only ratings, dates, and shelf operations are permitted. Review posting and any social
-action (follow/like/comment) are deliberately NOT applyable here — reviews stay human-edited
-and posted by hand, and social actions are never automated. An unknown action is a hard error.
+Only ratings, dates, shelf operations, and Listopia list adds are permitted. Review
+posting and any social action (follow/like/comment) are deliberately NOT applyable here —
+reviews stay human-edited and posted by hand, and social actions are never automated. An
+unknown action is a hard error.
 """
 
 from __future__ import annotations
@@ -12,12 +13,16 @@ import io
 from dataclasses import dataclass
 
 # Deliberately excludes post_review (human-in-the-loop) and any follow/like/comment action.
-ALLOWED_ACTIONS = frozenset({"ensure_shelf", "set_shelf", "set_rating", "set_date"})
+ALLOWED_ACTIONS = frozenset(
+    {"ensure_shelf", "set_shelf", "set_rating", "set_date", "add_to_list"}
+)
 
 _HEADER = ("action", "book_id", "value")
 
 
-_NEEDS_VALUE = frozenset({"set_rating", "set_date"})
+# add_to_list's value is the target Listopia list id — required, same placeholder pattern
+# as a not-yet-decided rating/date.
+_NEEDS_VALUE = frozenset({"set_rating", "set_date", "add_to_list"})
 
 
 @dataclass(frozen=True)
@@ -28,7 +33,7 @@ class PlanItem:
 
 
 def is_unfilled(item: PlanItem) -> bool:
-    """True for a rating/date row the user hasn't filled in yet — skip, don't apply."""
+    """True for a rating/date/list row the user hasn't filled in yet — skip, don't apply."""
     return item.action in _NEEDS_VALUE and not item.value.strip()
 
 
