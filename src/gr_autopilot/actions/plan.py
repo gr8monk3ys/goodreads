@@ -13,9 +13,7 @@ import io
 from dataclasses import dataclass
 
 # Deliberately excludes post_review (human-in-the-loop) and any follow/like/comment action.
-ALLOWED_ACTIONS = frozenset(
-    {"ensure_shelf", "set_shelf", "set_rating", "set_date", "add_to_list"}
-)
+ALLOWED_ACTIONS = frozenset({"ensure_shelf", "set_shelf", "set_rating", "set_date", "add_to_list"})
 
 _HEADER = ("action", "book_id", "value")
 
