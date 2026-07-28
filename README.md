@@ -1,5 +1,9 @@
 # goodreads-autopilot
 
+<p align="center">
+  <img src="docs/assets/hero.png" alt="goodreads preview" width="640">
+</p>
+
 Autonomous automation for a single Goodreads account: ingest your library, learn your
 reviewing voice, generate new reviews with Claude, and write them back — reviews,
 ratings, shelves/tags, want-to-read, and Listopia lists.
