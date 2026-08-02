@@ -2,8 +2,10 @@ name: ci
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main] # required so status checks register on the default branch
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
