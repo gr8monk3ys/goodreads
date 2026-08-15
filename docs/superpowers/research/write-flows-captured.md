@@ -46,10 +46,35 @@
 - **Rating stars:** `button[aria-label="Rate N out of 5"]` inside `.BookRatingStars` (N=1..5). Buttons are duplicated for responsive layouts — act on the one with `offsetParent !== null`.
 - Note: most controls render **twice** (desktop + mobile); always pick the visible instance.
 
+## Classic Rails endpoints (captured 2026-08-14, live browser session)
+
+The classic (non-React) pages still exist and use plain Rails endpoints — a much simpler
+write surface than AppSync. Verified by really performing the writes (created the
+`existential-classics` shelf and tagged 9 books with it; all visible on the profile after).
+
+- **`GET /review/edit/<legacy_book_id>`** — stable authenticated editor page per book:
+  rating stars, shelf/tag picker, dates-read, review textarea. Works for every book already
+  on a shelf. This is the natural Playwright-fallback surface — no React modals.
+  - Picker quirk: the "Choose shelves..." control needs the page's JS settled; a click
+    before that focuses but doesn't open (retry once).
+- **Custom shelf create:** `POST https://www.goodreads.com/user_shelves` → 200
+  (form POST from `/shelf/edit`; shelf appears immediately). Fills the "custom shelf
+  create" gap below at the endpoint level.
+- **Custom-shelf tagging:** `POST https://www.goodreads.com/shelf/add_to_shelf` → 200
+  (AJAX from the classic picker; fired once per tick, applies instantly — no Save/Post
+  needed). Note: **not** `/shelf/add_to_shelf.json` as the design spec guessed.
+- **Feature shelf on profile:** radio on `/shelf/edit` (AJAX per click; verified by the
+  profile page rendering the featured shelf strip).
+- Not recorded: exact request bodies/CSRF params (the capture tool logged method/URL/status
+  only). Before implementing, capture one payload verbatim — the form fields are visible in
+  the `/shelf/edit` and `/review/edit` page source.
+
 ## Still to capture
-- **Rating** mutation (click a star) and its un-rate.
-- **Review** create/update mutation + the editor flow (`reviewEditUrl` appears in the `myReviewCard` query).
-- **Custom shelf create** and **Listopia list add** mutations.
+- **Rating** mutation (click a star) and its un-rate. (GraphQL `RateBook` since captured —
+  see `actions/graphql.py`; the classic editor's star widget is an alternative surface.)
+- **Review** create/update mutation + the editor flow (`reviewEditUrl` appears in the `myReviewCard` query). The classic `/review/edit/<id>` page's form is the likely simplest path.
+- **Request bodies** for `/user_shelves` and `/shelf/add_to_shelf` (endpoints + methods confirmed above).
+- **Listopia list add** mutation.
 
 ## Recommended backend approach
 Hybrid, GraphQL-first: load the book page once (stealth) to get `jwtToken` + GID + current shelf state, then POST the GraphQL mutation(s) directly with that JWT. Fall back to driving the UI selectors above if a mutation contract changes. Keep the AppSync URL + mutation strings in one module so a change is a one-file fix.

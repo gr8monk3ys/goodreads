@@ -26,7 +26,11 @@ class PlaywrightBackend:
         raise NotImplementedError("post_review: capture the review-editor flow first")
 
     def set_shelf(self, book_id: int, shelf: str) -> None:
-        raise NotImplementedError("set_shelf: confirm /shelf/add_to_shelf.json 2026 contract first")
+        raise NotImplementedError(
+            "set_shelf: endpoint confirmed live 2026-08-14 as POST /shelf/add_to_shelf "
+            "(no .json) from /review/edit/<book_id>; capture the request body before wiring "
+            "(see docs/superpowers/research/write-flows-captured.md)"
+        )
 
     def set_rating(self, book_id: int, rating: int) -> None:
         raise NotImplementedError("set_rating: capture the star-rating write contract first")
