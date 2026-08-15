@@ -5,6 +5,7 @@ import pytest
 
 from gr_autopilot.drafts.format import DraftMeta, parse_draft
 from gr_autopilot.drafts.studio import (
+    drafted_book_ids,
     has_draft,
     pending_target_rows,
     status_counts,
@@ -57,3 +58,16 @@ def test_pending_targets_excludes_already_drafted(conn: sqlite3.Connection, tmp_
     assert [r["book_id"] for r in pending_target_rows(conn, tmp_path)] == [22]
     write_draft(tmp_path, _meta(22, "Some Skim"), "draft for 22")
     assert pending_target_rows(conn, tmp_path) == []
+
+
+def test_drafted_book_ids_from_one_directory_scan(tmp_path: Path) -> None:
+    """The set both `gr dashboard` and `gr launch` need, without a glob per book."""
+    write_draft(tmp_path, _meta(3), "d3")
+    write_draft(tmp_path, _meta(12, "Other Title"), "d12")
+    (tmp_path / "notes.txt").write_text("not a draft")
+    (tmp_path / "readme.md").write_text("no id prefix")
+    assert drafted_book_ids(tmp_path) == {3, 12}
+
+
+def test_drafted_book_ids_missing_dir_is_empty(tmp_path: Path) -> None:
+    assert drafted_book_ids(tmp_path / "nope") == set()

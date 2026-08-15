@@ -8,6 +8,7 @@ import typer
 
 from gr_autopilot.config import Settings
 from gr_autopilot.ingest.csv_parser import parse_export
+from gr_autopilot.launch import DEFAULT_CADENCE
 from gr_autopilot.orchestrator.run import RunSummary
 from gr_autopilot.store.db import connect, init_db
 from gr_autopilot.store.repository import targets, upsert_books
@@ -175,11 +176,11 @@ _DASHBOARD_BIO = (
 
 
 @app.command()
-def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
+def dashboard(*, out: Path = Path("data/dashboard.html"), per_week: int = DEFAULT_CADENCE) -> None:
     """Generate a self-contained HTML action board of your target profile state. Read-only."""
     from gr_autopilot.actions.plan import is_unfilled, parse_plan
     from gr_autopilot.dashboard import build_dashboard_html
-    from gr_autopilot.drafts.studio import has_draft, status_counts
+    from gr_autopilot.drafts.studio import drafted_book_ids, status_counts
     from gr_autopilot.insights.load import load_facts
 
     settings = Settings()
@@ -197,15 +198,15 @@ def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
             if item.action == "set_rating" and item.book_id and not is_unfilled(item):
                 proposed[item.book_id] = int(item.value)
 
-    drafted = {f.book_id for f in facts if has_draft(settings.drafts_dir, f.book_id)}
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
         build_dashboard_html(
             facts,
             draft_counts=status_counts(settings.drafts_dir),
             proposed_ratings=proposed,
-            drafted_ids=drafted,
+            drafted_ids=drafted_book_ids(settings.drafts_dir),
             bio=_DASHBOARD_BIO,
+            reviews_per_week=per_week,
         ),
         encoding="utf-8",
     )
@@ -213,9 +214,9 @@ def dashboard(*, out: Path = Path("data/dashboard.html")) -> None:
 
 
 @app.command()
-def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = 3) -> None:
+def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = DEFAULT_CADENCE) -> None:
     """Sequence the action board into a paced launch campaign (what to do first). Read-only."""
-    from gr_autopilot.drafts.studio import has_draft
+    from gr_autopilot.drafts.studio import drafted_book_ids
     from gr_autopilot.insights.load import load_facts
     from gr_autopilot.launch import build_launch_plan, render_markdown
 
@@ -226,9 +227,11 @@ def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = 3) -> Non
         typer.echo("No library yet — run `gr ingest <goodreads_library_export.csv>` first.")
         return
 
-    drafted = {f.book_id for f in facts if has_draft(settings.drafts_dir, f.book_id)}
     plan = build_launch_plan(
-        facts, drafted_ids=drafted, bio=_DASHBOARD_BIO, reviews_per_week=per_week
+        facts,
+        drafted_ids=drafted_book_ids(settings.drafts_dir),
+        bio=_DASHBOARD_BIO,
+        reviews_per_week=per_week,
     )
     md = render_markdown(plan)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -252,7 +255,7 @@ def backup(*, dest: Path | None = None) -> None:
     sources = [settings.db_path.parent, settings.drafts_dir.parent]
     try:
         archive = backup_artifacts(sources, dest or settings.backup_dir, timestamp=datetime.now())
-    except ValueError as exc:
+    except (ValueError, FileExistsError) as exc:
         typer.echo(str(exc))
         raise typer.Exit(1) from exc
     size_kb = archive.stat().st_size / 1024

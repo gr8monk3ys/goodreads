@@ -20,8 +20,24 @@ def draft_path(drafts_dir: Path, meta: DraftMeta) -> Path:
 
 
 def has_draft(drafts_dir: Path, book_id: int) -> bool:
-    """True if any draft file already exists for this book (matched by id prefix)."""
-    return any(drafts_dir.glob(f"{book_id}-*.md"))
+    """True if any draft file already exists for this book."""
+    return book_id in drafted_book_ids(drafts_dir)
+
+
+def drafted_book_ids(drafts_dir: Path) -> set[int]:
+    """Book ids that already have a draft file, from a single directory scan.
+
+    The one definition of "has a draft" — every other check routes through it,
+    so dashboard, launch, and the clobber guard can't drift apart on the
+    filename convention. Missing dir -> empty.
+    """
+    ids: set[int] = set()
+    if drafts_dir.is_dir():
+        for path in drafts_dir.glob("*.md"):
+            prefix = path.name.partition("-")[0]
+            if prefix.isdigit():
+                ids.add(int(prefix))
+    return ids
 
 
 def write_draft(drafts_dir: Path, meta: DraftMeta, body: str, *, overwrite: bool = False) -> Path:
@@ -48,5 +64,5 @@ def pending_target_rows(
     conn: sqlite3.Connection, drafts_dir: Path, require_rating: bool = True
 ) -> list[sqlite3.Row]:
     """Read+unreviewed books that don't yet have a draft file — the worklist to generate."""
-    rows = targets(conn, require_rating)
-    return [r for r in rows if not has_draft(drafts_dir, int(r["book_id"]))]
+    drafted = drafted_book_ids(drafts_dir)
+    return [r for r in targets(conn, require_rating) if int(r["book_id"]) not in drafted]

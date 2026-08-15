@@ -7,7 +7,8 @@ data visualizations, then a checkbox action board (ticks persist via localStorag
 
 Styling is ported from lscaturchio.xyz: Fraunces display serif + Instrument Sans body + IBM
 Plex Mono "wall labels", forest-green-on-warm-paper, hairline borders (no shadows), and a
-dark mode. Google Fonts are @imported for fidelity but degrade to system fonts offline.
+dark mode. No webfont fetch — self-contained means no network requests at all, so the font
+stacks name the site fonts (used if installed locally) and fall back to system fonts.
 """
 
 from __future__ import annotations
@@ -17,22 +18,10 @@ from collections.abc import Mapping, Sequence
 
 from gr_autopilot.curate import find_duplicates, hygiene
 from gr_autopilot.insights.metrics import BookFact, compute
-from gr_autopilot.launch import LaunchPlan, build_launch_plan
+from gr_autopilot.launch import DEFAULT_CADENCE, LaunchPlan, build_launch_plan
 from gr_autopilot.presence import signature
 
-READ = "read"
-_EXISTENTIAL_AUTHORS = {
-    "Fyodor Dostoevsky",
-    "Hermann Hesse",
-    "Franz Kafka",
-    "Aldous Huxley",
-    "Viktor E. Frankl",
-    "George Orwell",
-    "Theodore John Kaczynski",
-}
-
 _CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --bg:#f5f2ed;--fg:#1a202c;--card:#faf8f6;--primary:#2c5530;--secondary:#4d7350;
   --muted:#e8e4df;--muted-fg:#5a6577;--accent:#faf0e0;--border:#ddd5cc;
@@ -171,12 +160,12 @@ def _launch_card(plan: LaunchPlan) -> str:
     ]
     for p in plan.phases:
         if p.key == "cadence":
-            continue  # the full review list already lives in section 2 below
+            continue  # section 2 below renders plan.review_targets — the same list, same order
         out.append(f'<h3 class="lh">{_e(p.title)}</h3>')
         out.append(f'<p class="lblurb">{_e(p.blurb)}</p>')
-        for j, step in enumerate(p.steps):
+        for step in p.steps:
             detail = f' <span class="muted">— {_e(step.detail)}</span>' if step.detail else ""
-            out.append(_task(f"L{p.key}{j}", f"{_e(step.text)}{detail}"))
+            out.append(_task(f"L-{p.key}-{step.key}", f"{_e(step.text)}{detail}"))
     out.append("</div>")
     return "\n".join(out)
 
@@ -188,20 +177,19 @@ def build_dashboard_html(
     proposed_ratings: Mapping[int, int] | None = None,
     drafted_ids: set[int] | None = None,
     bio: str = "",
+    reviews_per_week: int = DEFAULT_CADENCE,
 ) -> str:
     m = compute(facts)
     sig = signature(facts)
     hyg = hygiene(facts)
     dups = find_duplicates(facts)
-    plan = build_launch_plan(facts, drafted_ids=drafted_ids or set(), bio=bio)
+    plan = build_launch_plan(
+        facts, drafted_ids=drafted_ids or set(), bio=bio, reviews_per_week=reviews_per_week
+    )
     drafts = dict(draft_counts or {})
     props = dict(proposed_ratings or {})
-    read = [f for f in facts if f.exclusive_shelf == READ]
-    unreviewed = [f for f in read if not f.has_review]
-    members = sorted(
-        (f for f in read if f.my_rating == 5 or f.author in _EXISTENTIAL_AUTHORS),
-        key=lambda f: -f.my_rating,
-    )
+    unreviewed = plan.review_targets
+    members = plan.shelf_members
     n_read = m.reviews.n_read
 
     s: list[str] = [
@@ -248,10 +236,10 @@ def build_dashboard_html(
     # 1. Ratings
     s.append(f"<h2>1 · Rate {m.ratings.n_unrated} books</h2><div class='card'>")
     s.append("<p class='muted'>Suggested stars in parentheses — your call; change freely.</p>")
-    for i, f in enumerate(hyg.unrated_reads):
+    for f in hyg.unrated_reads:
         sug = props.get(f.book_id)
         tag = f' <span class="star">({"&#9733;" * sug})</span>' if sug else ""
-        s.append(_task(f"rate{i}", f"{_e(f.title)} — {_e(f.author)}{tag}"))
+        s.append(_task(f"rate{f.book_id}", f"{_e(f.title)} — {_e(f.author)}{tag}"))
     s.append("</div>")
 
     # 2. Reviews
@@ -261,8 +249,8 @@ def build_dashboard_html(
         f"<p class='muted'>{ready} editable drafts are waiting in "
         "<code>drafts/reviews/</code> — edit in your voice, then post.</p>"
     )
-    for i, f in enumerate(unreviewed):
-        s.append(_task(f"rev{i}", f"{_e(f.title)} — {_e(f.author)}"))
+    for f in unreviewed:
+        s.append(_task(f"rev{f.book_id}", f"{_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
 
     # 3. Shelf
@@ -274,22 +262,26 @@ def build_dashboard_html(
             "then feature it on your profile",
         )
     )
-    for i, f in enumerate(members):
-        s.append(_task(f"shelf{i}", f"Add: {_e(f.title)} — {_e(f.author)}"))
+    for f in members:
+        s.append(_task(f"shelf{f.book_id}", f"Add: {_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
 
     # 4. Dates
     s.append(f"<h2>4 · Backfill {len(hyg.undated_reads)} read-dates</h2><div class='card'>")
     s.append("<p class='muted'>Even just the year fixes your stats & Reading Challenge.</p>")
-    for i, f in enumerate(hyg.undated_reads):
-        s.append(_task(f"date{i}", f"{_e(f.title)} — {_e(f.author)}"))
+    for f in hyg.undated_reads:
+        s.append(_task(f"date{f.book_id}", f"{_e(f.title)} — {_e(f.author)}"))
     s.append("</div>")
 
     # 5. Duplicates
     if dups:
         s.append(f"<h2>5 · Merge {len(dups)} duplicate(s)</h2><div class='card'>")
-        for i, (title, group) in enumerate(dups):
-            s.append(_task(f"dup{i}", f"Merge {len(group)} editions of <b>{_e(title)}</b>"))
+        for title, group in dups:
+            s.append(
+                _task(
+                    f"dup{group[0].book_id}", f"Merge {len(group)} editions of <b>{_e(title)}</b>"
+                )
+            )
         s.append("</div>")
 
     # 6. Bio + signature
