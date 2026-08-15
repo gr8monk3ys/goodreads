@@ -15,7 +15,7 @@ ratings, shelves/tags, want-to-read, and Listopia lists.
 ```
 ingest   CSV export  -> normalized records          (stdlib csv)
 store    records      -> SQLite (books/reviews/shelves/runs/actions_log)
-voice    reviews      -> embeddings + vector store   (bge-small + Chroma; protocol-based)
+voice    reviews      -> embeddings + vector store   (bge-small + in-memory store; protocol-based)
 generate target book  -> review draft in your voice  (Claude RAG, prompt-cached)
 catalog  book id      -> public genres / metadata     (no auth; __NEXT_DATA__ read)
 insights store        -> analytics + suggested moves  (read-only; metrics/suggestions/report)
