@@ -121,3 +121,28 @@ Reload `/shelf/edit` and read the number.
 This also resolves the extension-disconnect case: if the connection drops
 mid-POST, the write has usually still landed server-side. Reading the count on
 the next page load tells you whether to retry — guessing does not.
+
+## The daily shelving cap fails SUCCESSFULLY (observed 2026-08-18)
+
+After roughly 1,000 shelvings in one day, `add_to_shelf` keeps returning
+**HTTP 200 with a full success-shaped RJS body** — ~37KB of the same
+DOM-updating JavaScript a real success returns — while persisting nothing.
+No error status, no error text, no captcha. The only tell is the count.
+
+Observed live: a 736-book run landed its first ~548 and silently dropped the
+rest; retrying the dropped 187 at one-third the pace produced 187 more clean
+200s and zero new books. Same result with a freshly resolved edition id, so it
+is an account-level rolling cap, not throttling of the connection or the ids.
+
+Consequences for any bulk tool:
+
+- **A 200 from `add_to_shelf` is not evidence of a write. Only a count read
+  back from a fresh page load is.** Verify per batch, not per run.
+- When the count stops moving while statuses stay 200, STOP. More requests
+  cannot land, and sustained write pressure on a capped account is exactly the
+  pattern that looks like abuse.
+- Recover by diffing: re-read the shelf's actual ids, subtract from the intended
+  set, and queue the remainder for after the cap resets. Adds are idempotent,
+  so the retry queue can safely include false negatives.
+- Read endpoints (review lists, Listopia, search pages) keep working normally
+  while writes are capped — the cap is on shelvings, not on the session.
