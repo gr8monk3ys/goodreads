@@ -8,6 +8,7 @@ def test_parse_plan_reads_rows_with_optional_header() -> None:
         "set_shelf,436982,existential-classics\n"
         "set_rating,28187,4\n"
         "set_date,5129,2024/03/01\n"
+        "add_to_list,28187,best-of-2026\n"
     )
     items = parse_plan(text)
     assert items == [
@@ -15,6 +16,7 @@ def test_parse_plan_reads_rows_with_optional_header() -> None:
         PlanItem("set_shelf", 436982, "existential-classics"),
         PlanItem("set_rating", 28187, "4"),
         PlanItem("set_date", 5129, "2024/03/01"),
+        PlanItem("add_to_list", 28187, "best-of-2026"),
     ]
 
 
@@ -27,9 +29,11 @@ def test_parse_plan_skips_blank_and_comment_lines() -> None:
 def test_is_unfilled_flags_blank_rating_and_date_placeholders() -> None:
     assert is_unfilled(PlanItem("set_rating", 11, ""))  # user hasn't filled the star yet
     assert is_unfilled(PlanItem("set_date", 11, ""))
+    assert is_unfilled(PlanItem("add_to_list", 11, ""))  # user hasn't picked a list yet
     assert not is_unfilled(PlanItem("set_rating", 11, "4"))
     assert not is_unfilled(PlanItem("set_shelf", 11, "existential-classics"))
     assert not is_unfilled(PlanItem("ensure_shelf", None, "existential-classics"))
+    assert not is_unfilled(PlanItem("add_to_list", 11, "best-of-2026"))
 
 
 def test_parse_plan_rejects_unknown_action() -> None:

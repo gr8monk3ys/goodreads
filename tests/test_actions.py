@@ -146,3 +146,34 @@ def test_set_date_kill_switch_blocks(conn: sqlite3.Connection) -> None:
     res = ex.set_date(11, "2024/03/01")
     assert res.status == "failed"
     assert backend.calls == []
+
+
+def test_add_to_list_live_calls_backend(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    res = _executor(conn, backend, dry_run=False).add_to_list("best-of-2026", 11)
+    assert res.status == "done"
+    assert backend.calls[0] == ("add_to_list", ("best-of-2026", 11))
+
+
+def test_add_to_list_dry_run_does_not_write(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    res = _executor(conn, backend, dry_run=True).add_to_list("best-of-2026", 11)
+    assert res.status == "dry_run"
+    assert backend.calls == []
+
+
+def test_add_to_list_is_idempotent(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    ex = _executor(conn, backend, dry_run=False)
+    ex.add_to_list("best-of-2026", 11)
+    res2 = ex.add_to_list("best-of-2026", 11)
+    assert res2.status == "skipped_idempotent"
+    assert len(backend.calls) == 1
+
+
+def test_add_to_list_kill_switch_blocks(conn: sqlite3.Connection) -> None:
+    backend = RecordingBackend()
+    ex = _executor(conn, backend, dry_run=False, settings=Settings(disable_writes=True))
+    res = ex.add_to_list("best-of-2026", 11)
+    assert res.status == "failed"
+    assert backend.calls == []

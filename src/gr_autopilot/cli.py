@@ -326,12 +326,14 @@ def _dispatch_write(executor: ActionExecutor, item: PlanItem) -> ActionResult:
         return executor.set_rating(item.book_id, int(item.value))
     if item.action == "set_date":
         return executor.set_date(item.book_id, item.value)
+    if item.action == "add_to_list":
+        return executor.add_to_list(item.value, item.book_id)
     return executor.set_shelf(item.book_id, item.value)
 
 
 @app.command()
 def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
-    """Apply a write-plan CSV (ratings/dates/shelves) to your account. DRY-RUN by default.
+    """Apply a write-plan CSV (ratings/dates/shelves/list-adds) to your account. DRY-RUN by default.
 
     Reviews and social actions are never applyable here. Live writes (--no-dry-run) need the
     browser extra and a prior `gr login`, and carry account-suspension risk.
