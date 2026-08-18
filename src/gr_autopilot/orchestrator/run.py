@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from gr_autopilot.actions.core import GoodreadsBackend, Throttle
 from gr_autopilot.actions.executor import ActionExecutor
-from gr_autopilot.catalog.enrich import enrich_genres
+from gr_autopilot.catalog.enrich import enrich_missing
 from gr_autopilot.catalog.protocols import Catalog
 from gr_autopilot.config import Settings
 from gr_autopilot.generate.prompt import TargetBook
@@ -84,6 +84,6 @@ def prepare_corpus(
     (e.g. for an offline run). Genres enriched here flow into the index metadata so
     retrieval can filter by genre.
     """
-    enriched = enrich_genres(conn, catalog, limit=enrich_limit) if catalog is not None else 0
+    enriched = enrich_missing(conn, catalog, limit=enrich_limit) if catalog is not None else 0
     indexed = build_index(conn, embedder, store)
     return enriched, indexed

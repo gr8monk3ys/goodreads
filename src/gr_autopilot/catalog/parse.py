@@ -29,8 +29,19 @@ def _apollo_state(next_data: dict[str, object]) -> dict[str, object]:
     return state if isinstance(state, dict) else {}
 
 
+def _work_avg_rating(apollo: dict[str, object]) -> float | None:
+    """averageRating from the Work entry's stats; None if absent (page still parses)."""
+    work = next(
+        (v for v in apollo.values() if isinstance(v, dict) and v.get("__typename") == "Work"),
+        None,
+    )
+    stats = work.get("stats") if isinstance(work, dict) else None
+    avg = stats.get("averageRating") if isinstance(stats, dict) else None
+    return float(avg) if isinstance(avg, int | float) else None
+
+
 def parse_book_meta(next_data: dict[str, object]) -> BookMeta:
-    """Extract book_id (legacyId), title, and genres from a parsed __NEXT_DATA__ blob."""
+    """Extract book_id (legacyId), title, genres, and avg rating from __NEXT_DATA__."""
     apollo = _apollo_state(next_data)
     book = next(
         (v for v in apollo.values() if isinstance(v, dict) and v.get("__typename") == "Book"),
@@ -54,4 +65,5 @@ def parse_book_meta(next_data: dict[str, object]) -> BookMeta:
         ),
         title=str(book.get("title") or ""),
         genres=tuple(genres),
+        avg_rating=_work_avg_rating(apollo),
     )
