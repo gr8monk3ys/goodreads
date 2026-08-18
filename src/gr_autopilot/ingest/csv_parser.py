@@ -67,7 +67,8 @@ def _row_to_record(row: dict[str, str]) -> BookRecord:
         author=(row.get("Author") or "").strip(),
         isbn=clean_isbn(row.get("ISBN")),
         isbn13=clean_isbn(row.get("ISBN13")),
-        my_rating=int(row.get("My Rating") or 0),
+        # Not int(): the 2026 export emits nonzero ratings as "4.0".
+        my_rating=coerce_int(row.get("My Rating")) or 0,
         avg_rating=float(avg) if avg else None,
         exclusive_shelf=(row.get("Exclusive Shelf") or "").strip(),
         date_read=((row.get("Date Read") or "").strip() or None),

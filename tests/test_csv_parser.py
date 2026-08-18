@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from gr_autopilot.ingest.csv_parser import (
+    _row_to_record,
     clean_isbn,
     coerce_int,
     norm_review,
@@ -45,6 +46,25 @@ def test_coerce_int_handles_blanks_floats_and_text() -> None:
     assert coerce_int("") is None
     assert coerce_int(None) is None
     assert coerce_int("n/a") is None  # non-numeric -> None, never raises
+
+
+def test_row_to_record_accepts_float_formatted_my_rating() -> None:
+    # Goodreads' 2026 export emits nonzero ratings as "4.0" while unrated stays "0".
+    # int("4.0") raises, which aborted the whole ingest.
+    rated = _row_to_record({"Book Id": "1", "My Rating": "4.0"})
+    assert rated.my_rating == 4
+
+    unrated = _row_to_record({"Book Id": "2", "My Rating": "0"})
+    assert unrated.my_rating == 0
+
+    missing = _row_to_record({"Book Id": "3"})
+    assert missing.my_rating == 0
+
+
+def test_row_to_record_survives_dropped_average_rating_column() -> None:
+    # The 2026 export dropped "Average Rating" entirely; parsing must degrade to
+    # None rather than raise, since avg_rating feeds review-leverage ranking.
+    assert _row_to_record({"Book Id": "1"}).avg_rating is None
 
 
 def test_parse_export_reads_all_rows() -> None:
