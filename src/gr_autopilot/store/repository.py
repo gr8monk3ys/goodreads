@@ -145,6 +145,22 @@ def books_without_genres(conn: sqlite3.Connection) -> list[int]:
     return [int(r["book_id"]) for r in rows]
 
 
+def books_missing_enrichment(conn: sqlite3.Connection) -> list[int]:
+    """Books missing genres OR avg_rating, read shelf first (review leverage needs avg)."""
+    rows = conn.execute("""
+        SELECT b.book_id FROM books b
+        WHERE b.avg_rating IS NULL
+           OR NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.book_id)
+        ORDER BY (b.exclusive_shelf = 'read') DESC, b.book_id
+        """).fetchall()
+    return [int(r["book_id"]) for r in rows]
+
+
+def set_book_avg_rating(conn: sqlite3.Connection, book_id: int, avg_rating: float) -> None:
+    conn.execute("UPDATE books SET avg_rating = ? WHERE book_id = ?", (avg_rating, book_id))
+    conn.commit()
+
+
 def set_book_genres(conn: sqlite3.Connection, book_id: int, genres: Sequence[str]) -> None:
     for genre in genres:
         conn.execute(

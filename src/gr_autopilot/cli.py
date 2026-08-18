@@ -49,14 +49,14 @@ def status() -> None:
 
 @app.command()
 def enrich(limit: int | None = None) -> None:
-    """Fetch genres for books missing them via public read (no login)."""
-    from gr_autopilot.catalog.enrich import enrich_genres
+    """Fetch genres + avg ratings for books missing them via public read (no login)."""
+    from gr_autopilot.catalog.enrich import enrich_missing
     from gr_autopilot.catalog.goodreads_public import GoodreadsPublicCatalog
 
     settings = Settings()
     conn = _open_db(settings)
-    count = enrich_genres(conn, GoodreadsPublicCatalog(), limit=limit)
-    typer.echo(f"enriched {count} books with genres")
+    count = enrich_missing(conn, GoodreadsPublicCatalog(), limit=limit)
+    typer.echo(f"enriched {count} books (genres/avg rating)")
 
 
 @app.command()
@@ -76,10 +76,10 @@ def insights(
     conn = _open_db(settings)
 
     if enrich:
-        from gr_autopilot.catalog.enrich import enrich_genres
+        from gr_autopilot.catalog.enrich import enrich_missing
         from gr_autopilot.catalog.goodreads_public import GoodreadsPublicCatalog
 
-        enrich_genres(conn, GoodreadsPublicCatalog())
+        enrich_missing(conn, GoodreadsPublicCatalog())
 
     facts = load_facts(conn)
     if not facts:
