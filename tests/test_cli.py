@@ -93,6 +93,25 @@ def test_backup_archives_db_and_drafts(tmp_path: Path, monkeypatch: pytest.Monke
     assert str(archives[0]) in result.output  # tells the user where the backup went
 
 
+def test_backup_bare_filename_db_path_refuses_instead_of_tarring_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """GR_DB_PATH=autopilot.db makes the derived source dir '.', which would archive the
+    entire working tree (including .git and browser session credentials). Refuse loudly."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GR_DB_PATH", "autopilot.db")
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts" / "reviews"))
+    monkeypatch.setenv("GR_BACKUP_DIR", str(tmp_path / "backups"))
+    Path("autopilot.db").write_bytes(b"db")
+    (tmp_path / "secret.txt").write_text("never in a backup")
+
+    result = runner.invoke(app, ["backup"])
+
+    assert result.exit_code == 1
+    assert "too broad" in result.output
+    assert not list((tmp_path / "backups").glob("*.tar.gz"))
+
+
 def test_backup_with_nothing_to_save_is_friendly(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

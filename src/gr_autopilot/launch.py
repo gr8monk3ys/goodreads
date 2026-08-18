@@ -11,15 +11,15 @@ heuristic, not a guarantee. Read-only.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import ceil
 
-from gr_autopilot.curate import hygiene
+from gr_autopilot.curate import existential_shelf_members, hygiene
 from gr_autopilot.insights.metrics import BookFact
 from gr_autopilot.presence import signature
 
 READ = "read"
-_DEFAULT_CADENCE = 3
+DEFAULT_CADENCE = 3
 
 
 def ranked_review_targets(facts: Sequence[BookFact], drafted_ids: set[int]) -> list[BookFact]:
@@ -46,6 +46,9 @@ def ranked_review_targets(facts: Sequence[BookFact], drafted_ids: set[int]) -> l
 class LaunchStep:
     text: str
     detail: str = ""
+    # Required stable identity for checkbox persistence: positional ids re-attach
+    # saved ticks to different books whenever the list reorders between regenerations.
+    key: str = field(kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -60,8 +63,19 @@ class LaunchPhase:
 class LaunchPlan:
     phases: tuple[LaunchPhase, ...]
     reviews_per_week: int
-    weeks_to_finish: int
-    n_review_targets: int
+    # The ranked lists the plan was built from, so consumers (the dashboard's
+    # section 2 and shelf section) render the same order by construction
+    # instead of recomputing and hoping to match.
+    review_targets: tuple[BookFact, ...]
+    shelf_members: tuple[BookFact, ...]
+
+    @property
+    def n_review_targets(self) -> int:
+        return len(self.review_targets)
+
+    @property
+    def weeks_to_finish(self) -> int:
+        return ceil(self.n_review_targets / self.reviews_per_week)
 
     def phase(self, key: str) -> LaunchPhase:
         return next(p for p in self.phases if p.key == key)
@@ -70,7 +84,7 @@ class LaunchPlan:
 def _review_step(f: BookFact, drafted_ids: set[int]) -> LaunchStep:
     stars = f"{f.my_rating}★" if f.my_rating else "unrated"
     detail = "draft ready in drafts/reviews/" if f.book_id in drafted_ids else "needs a draft"
-    return LaunchStep(f"Post: {f.title} — {f.author} ({stars})", detail)
+    return LaunchStep(f"Post: {f.title} — {f.author} ({stars})", detail, key=f"b{f.book_id}")
 
 
 def build_launch_plan(
@@ -78,25 +92,25 @@ def build_launch_plan(
     *,
     drafted_ids: set[int],
     bio: str = "",
-    reviews_per_week: int = _DEFAULT_CADENCE,
+    reviews_per_week: int = DEFAULT_CADENCE,
 ) -> LaunchPlan:
     """Turn the flat action board into a prioritized, paced rollout campaign."""
     cadence = max(1, reviews_per_week)
     hyg = hygiene(facts)
     sig = signature(facts)
-    read = [f for f in facts if f.exclusive_shelf == READ]
-    members = [f for f in read if f.my_rating == 5]
+    members = existential_shelf_members(facts)
     targets = ranked_review_targets(facts, drafted_ids)
     weeks_to_finish = ceil(len(targets) / cadence) if targets else 0
 
     # 1 · Today — one-time polish that makes the profile read "complete" at a glance.
     today: list[LaunchStep] = []
     if bio:
-        today.append(LaunchStep("Paste your bio into Settings → Profile", bio))
+        today.append(LaunchStep("Paste your bio into Settings → Profile", bio, key="bio"))
     today.append(
         LaunchStep(
             f"Create the existential-classics shelf and feature it ({len(members)} books ready)",
             "Your 5★ canon is the spine of it.",
+            key="make-shelf",
         )
     )
     if hyg.unrated_reads:
@@ -104,6 +118,7 @@ def build_launch_plan(
             LaunchStep(
                 f"Rate your {len(hyg.unrated_reads)} unrated reads",
                 "`gr apply` can do this through the safe spine, or tick them by hand.",
+                key="rate-backlog",
             )
         )
     if hyg.undated_reads:
@@ -111,27 +126,40 @@ def build_launch_plan(
             LaunchStep(
                 f"Backfill read-years on {len(hyg.undated_reads)} books",
                 "Even just the year fixes your stats and Reading Challenge.",
+                key="date-backfill",
             )
         )
 
     # 2 · This week — the follow-conversion engine: your strongest reviews + first follows.
     this_week = [_review_step(f, drafted_ids) for f in targets[:cadence]]
-    this_week.append(
-        LaunchStep(
-            "Follow ~10 reviewers from those books' Community Reviews",
-            "Pick people whose reviews you actually like — some follow back, but do it for the "
-            "feed you'll get, not the reciprocity.",
+    if targets:
+        this_week.append(
+            LaunchStep(
+                "Follow ~10 reviewers from those books' Community Reviews",
+                "Pick people whose reviews you actually like — some follow back, but do it for "
+                "the feed you'll get, not the reciprocity.",
+                key="follow",
+            )
         )
-    )
 
     # 3 · Cadence — the remaining reviews, paced so each gets its own feed slot.
     cadence_steps = [_review_step(f, drafted_ids) for f in targets[cadence:]]
 
     # 4 · Ongoing — the weekly habit that compounds presence.
-    ongoing = [
-        LaunchStep(f"Each week: post your next ~{cadence} reviews from the list above"),
-        LaunchStep("Each week: like + leave one real comment on a review of a book you've read"),
-        LaunchStep("Keep your Reading Challenge count updated as you log books"),
+    ongoing = []
+    if targets:
+        ongoing.append(
+            LaunchStep(
+                f"Each week: post your next ~{cadence} reviews from the list above",
+                key="weekly-post",
+            )
+        )
+    ongoing += [
+        LaunchStep(
+            "Each week: like + leave one real comment on a review of a book you've read",
+            key="weekly-comment",
+        ),
+        LaunchStep("Keep your Reading Challenge count updated as you log books", key="challenge"),
     ]
 
     canon = ", ".join(sig.five_star_titles[:3]) or "your standout reads"
@@ -160,16 +188,16 @@ def build_launch_plan(
         LaunchPhase(
             "ongoing",
             "Ongoing — the weekly habit",
-            "A profile that's active most weeks beats one that did everything in a "
-            "weekend and went silent.",
+            "A profile that's active most weeks tends to read better than one that did "
+            "everything in a weekend and went silent.",
             tuple(ongoing),
         ),
     )
     return LaunchPlan(
-        phases=phases,
+        phases=tuple(p for p in phases if p.steps),  # an empty phase is a heading over nothing
         reviews_per_week=cadence,
-        weeks_to_finish=weeks_to_finish,
-        n_review_targets=len(targets),
+        review_targets=tuple(targets),
+        shelf_members=tuple(members),
     )
 
 

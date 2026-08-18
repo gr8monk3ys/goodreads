@@ -77,6 +77,41 @@ def test_empty_library_is_safe() -> None:
     assert plan.phases  # still renders the static phases
 
 
+def test_review_steps_carry_stable_book_keys() -> None:
+    """Checkbox persistence in the dashboard keys off these — they must survive reordering."""
+    facts = [_read(7, "Seven", "A", 5), _read(9, "Nine", "B", 4)]
+    plan = build_launch_plan(facts, drafted_ids=set(), bio="", reviews_per_week=3)
+    keys = [s.key for s in plan.phase("this_week").steps]
+    assert "b7" in keys and "b9" in keys
+    assert all(s.key for p in plan.phases for s in p.steps)  # every step is addressable
+
+
+def test_shelf_count_matches_dashboard_membership_rule() -> None:
+    """One shared membership definition: 5-star OR existential author, not 5-star only."""
+    facts = [
+        _read(1, "Loved", "A", 5),
+        _read(2, "The Trial", "Franz Kafka", 4),  # existential author, 4 stars
+    ]
+    plan = build_launch_plan(facts, drafted_ids=set(), bio="", reviews_per_week=3)
+    today = " ".join(s.text for s in plan.phase("today").steps)
+    assert "2 books ready" in today
+
+
+def test_no_dangling_follow_step_when_no_targets() -> None:
+    """With every read reviewed, no step may reference 'those books' that don't exist."""
+    facts = [_read(1, "Done", "A", 5, reviewed=True)]
+    plan = build_launch_plan(facts, drafted_ids=set(), bio="", reviews_per_week=3)
+    all_text = " ".join(s.text for p in plan.phases for s in p.steps)
+    assert "those books" not in all_text
+    assert "from the list above" not in all_text
+
+
+def test_render_markdown_skips_empty_phases() -> None:
+    facts = [_read(1, "Done", "A", 5, reviewed=True)]
+    md = render_markdown(build_launch_plan(facts, drafted_ids=set(), bio="", reviews_per_week=3))
+    assert "This week" not in md  # nothing to post -> no empty phase heading
+
+
 def test_render_markdown_includes_phase_titles() -> None:
     facts = [_read(1, "Solo", "A", 5)]
     md = render_markdown(build_launch_plan(facts, drafted_ids=set(), bio="b", reviews_per_week=3))

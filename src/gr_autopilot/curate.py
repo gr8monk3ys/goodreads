@@ -18,6 +18,30 @@ READ = "read"
 TO_READ = "to-read"
 _YEAR_RE = re.compile(r"(\d{4})")
 
+# The one shared definition of the featured-shelf membership — launch and dashboard
+# must agree on it or the same page contradicts itself.
+EXISTENTIAL_AUTHORS = {
+    "Fyodor Dostoevsky",
+    "Hermann Hesse",
+    "Franz Kafka",
+    "Aldous Huxley",
+    "Viktor E. Frankl",
+    "George Orwell",
+    "Theodore John Kaczynski",
+}
+
+
+def existential_shelf_members(facts: Sequence[BookFact]) -> list[BookFact]:
+    """Read books that belong on the featured existential-classics shelf."""
+    return sorted(
+        (
+            f
+            for f in facts
+            if f.exclusive_shelf == READ and (f.my_rating == 5 or f.author in EXISTENTIAL_AUTHORS)
+        ),
+        key=lambda f: -f.my_rating,
+    )
+
 
 def _has_year(value: str | None) -> bool:
     return bool(value and _YEAR_RE.search(value))

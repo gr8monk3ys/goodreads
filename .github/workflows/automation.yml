@@ -2,8 +2,10 @@ name: automation
 # Scheduled run of the Goodreads pipeline. TWO STAGES BY DESIGN:
 #   generate (hosted) — contacts api.anthropic.com only, never Goodreads
 #   post (self-hosted, residential IP) — contacts www.goodreads.com only
-# The post job is gated off until you (a) implement playwright_backend.py from the
-# capture runbook and (b) attach a self-hosted runner labelled `residential`.
+# The post job is gated off until you (a) capture the remaining write contracts from the
+# runbook (the backends exist but most methods still raise pending live selector capture —
+# only set_rating via the RateBook GraphQL mutation is implemented) and (b) attach a
+# self-hosted runner labelled `residential`.
 on:
   workflow_dispatch:
     inputs:
@@ -38,7 +40,7 @@ jobs:
       - run: uv sync --locked --extra voice --extra generate
       # TODO(data): provide your library export + built index. Options:
       #   - commit goodreads_library_export.csv to this PRIVATE repo, or
-      #   - restore it (and the Chroma index) from a cache/artifact, or
+      #   - restore it (and data/autopilot.db) from a cache/artifact, or
       #   - keep them on the self-hosted runner and skip ingest here.
       - name: Generate drafts (dry-run; never contacts Goodreads)
         env:

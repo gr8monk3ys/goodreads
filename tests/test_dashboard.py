@@ -87,6 +87,48 @@ def test_dashboard_renders_reading_visualizations() -> None:
     assert "2023" in out and "2024" in out  # reads-by-year chart is data-driven
 
 
+def test_checkbox_ids_are_keyed_by_book_id_not_position() -> None:
+    """Ticks persist in localStorage by checkbox id; positional ids (rate0, rev1) re-attach
+    to different books when the list shrinks or reorders between regenerations."""
+    facts = [
+        bf(7, my_rating=0, title="Seven", author="A"),  # unrated + undated + unreviewed
+        bf(9, my_rating=0, title="Nine", author="B"),
+        bf(3, my_rating=5, title="Three", author="C", has_review=False),  # shelf member
+    ]
+    out = build_dashboard_html(facts, draft_counts={}, drafted_ids={7})
+    assert 'id="rate7"' in out and 'id="rate9"' in out
+    assert 'id="rev7"' in out and 'id="rev3"' in out
+    assert 'id="shelf3"' in out
+    assert 'id="date7"' in out
+    assert 'id="L-this_week-b7"' in out  # launch-card steps too
+
+
+def test_dashboard_honors_reviews_per_week() -> None:
+    facts = [bf(i, my_rating=5, title=f"B{i}", has_review=False) for i in range(1, 9)]
+    out = build_dashboard_html(facts, draft_counts={}, drafted_ids=set(), reviews_per_week=5)
+    assert "~5/week" in out
+
+
+def test_dashboard_makes_no_network_requests() -> None:
+    """The board is documented as self-contained: opening a personal file must not
+    ping any remote host, and offline opens must not block on a font fetch."""
+    out = build_dashboard_html([bf(1, my_rating=5)], draft_counts={}, drafted_ids=set())
+    assert "fonts.googleapis.com" not in out
+    assert "@import" not in out
+
+
+def test_review_section_lists_targets_in_ranked_order() -> None:
+    """Section 2 is what the launch card's cadence defers to — it must show the ranked
+    order (drafted first, then passion), not raw fact order."""
+    facts = [
+        bf(1, my_rating=3, title="Faint Praise", author="A", has_review=False),
+        bf(2, my_rating=5, title="Beloved Classic", author="B", has_review=False),
+    ]
+    out = build_dashboard_html(facts, draft_counts={}, drafted_ids=set())
+    section = out.split("2 · Post")[1].split("3 · Create")[0]
+    assert section.index("Beloved Classic") < section.index("Faint Praise")
+
+
 def test_dashboard_ports_site_design_system() -> None:
     out = build_dashboard_html([bf(1, my_rating=5)], draft_counts={}, drafted_ids=set())
     assert "Fraunces" in out  # the site's display serif
