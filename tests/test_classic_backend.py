@@ -7,6 +7,7 @@ from gr_autopilot.actions.classic import (
     CREATE_SHELF_URL,
     build_add_to_shelf_form,
     build_create_shelf_form,
+    build_remove_from_shelf_form,
 )
 from gr_autopilot.actions.classic_backend import ClassicRailsBackend
 
@@ -21,6 +22,18 @@ def test_create_shelf_form_is_the_captured_contract() -> None:
     form = build_create_shelf_form(name="russian-lit", csrf_token="tok")  # noqa: S106
     assert form == {"user_shelf[name]": "russian-lit", "authenticity_token": "tok"}
     assert CREATE_SHELF_URL == "https://www.goodreads.com/user_shelves"
+
+
+def test_remove_from_shelf_form_is_the_captured_contract() -> None:
+    # Same endpoint as add, plus a=remove. Verified live 2026-08-17 (4 removals,
+    # each confirmed by shelf-count reload).
+    form = build_remove_from_shelf_form(book_id=18788, shelf="to-read", csrf_token="tok")  # noqa: S106
+    assert form == {
+        "name": "to-read",
+        "book_id": "18788",
+        "a": "remove",
+        "authenticity_token": "tok",
+    }
 
 
 class _FakeResponse:
@@ -68,6 +81,15 @@ def test_set_shelf_raises_on_non_200() -> None:
     page = _FakePage(status=202)
     with pytest.raises(RuntimeError, match="202"):
         ClassicRailsBackend(page).set_shelf(1, "to-read")
+
+
+def test_backend_remove_from_shelf_posts_a_remove() -> None:
+    page = _FakePage()
+    ClassicRailsBackend(page).remove_from_shelf(18788, "to-read")
+    (call,) = page.posts
+    assert call["url"] == ADD_TO_SHELF_URL
+    assert call["form"]["a"] == "remove"
+    assert call["form"]["book_id"] == "18788"
 
 
 def test_ensure_shelf_creates_custom_shelf() -> None:
