@@ -155,3 +155,25 @@ def test_enrich_skips_books_with_nothing_to_apply(conn: sqlite3.Connection) -> N
     _seed_books(conn)
     catalog = FakeCatalog({1: BookMeta(book_id=1, title="A", genres=())})  # book 2 absent -> None
     assert enrich_missing(conn, catalog) == 0
+
+
+def test_enrich_aborts_after_consecutive_fetch_misses(conn: sqlite3.Connection) -> None:
+    # Rate limiting looks like an unbroken run of failed fetches. Last observed
+    # live (2026-08-18): ~180 futile calls burned into a dead throttle. Abort
+    # instead; the worklist keeps the rest for the next run.
+    for i in range(1, 9):
+        conn.execute("INSERT INTO books (book_id, title) VALUES (?, 'X')", (i,))
+    conn.commit()
+    catalog = FakeCatalog({8: BookMeta(book_id=8, title="X", avg_rating=4.0)})  # 1-7 -> None
+    assert enrich_missing(conn, catalog, max_consecutive_misses=5) == 0
+    assert catalog.calls == [1, 2, 3, 4, 5]  # stopped at the threshold; 8 never reached
+
+
+def test_enrich_miss_streak_resets_on_success(conn: sqlite3.Connection) -> None:
+    for i in range(1, 7):
+        conn.execute("INSERT INTO books (book_id, title) VALUES (?, 'X')", (i,))
+    conn.commit()
+    # misses at 1-3, hit at 4, misses at 5-6: never 5 consecutive -> full sweep
+    catalog = FakeCatalog({4: BookMeta(book_id=4, title="X", avg_rating=4.0)})
+    assert enrich_missing(conn, catalog, max_consecutive_misses=5) == 1
+    assert catalog.calls == [1, 2, 3, 4, 5, 6]
