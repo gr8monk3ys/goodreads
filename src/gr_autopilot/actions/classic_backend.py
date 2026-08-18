@@ -7,6 +7,7 @@ from gr_autopilot.actions.classic import (
     CREATE_SHELF_URL,
     build_add_to_shelf_form,
     build_create_shelf_form,
+    build_remove_from_shelf_form,
 )
 
 # Live write backend over the classic Rails endpoints (contracts in classic.py).
@@ -40,6 +41,15 @@ class ClassicRailsBackend:
     def set_shelf(self, book_id: int, shelf: str) -> None:
         token = self._csrf_token()
         self._post_form(ADD_TO_SHELF_URL, build_add_to_shelf_form(book_id, shelf, token), token)
+
+    def remove_from_shelf(self, book_id: int, shelf: str) -> None:
+        # Not in the GoodreadsBackend protocol (the write-plan allow-list has no
+        # remove action) — offered for interactive/cleanup use. See the builder's
+        # docstring: removing from the exclusive shelf deletes the review row.
+        token = self._csrf_token()
+        self._post_form(
+            ADD_TO_SHELF_URL, build_remove_from_shelf_form(book_id, shelf, token), token
+        )
 
     def ensure_shelf(self, name: str, *, exclusive: bool) -> None:
         if exclusive:
