@@ -106,13 +106,20 @@ def build_launch_plan(
     today: list[LaunchStep] = []
     if bio:
         today.append(LaunchStep("Paste your bio into Settings → Profile", bio, key="bio"))
-    today.append(
-        LaunchStep(
-            f"Create the existential-classics shelf and feature it ({len(members)} books ready)",
-            "Your 5★ canon is the spine of it.",
-            key="make-shelf",
+    # The CSV records custom-shelf membership, so once the shelf exists the
+    # "create it" advice is stale — the remaining human step is featuring it.
+    # The key stays "make-shelf" either way so saved dashboard ticks survive.
+    if any("existential-classics" in f.shelves for f in facts):
+        today.append(
+            LaunchStep(
+                f"Feature your existential-classics shelf ({len(members)} books on it)",
+                "My Books → Edit Shelves → tick 'feature'. Your 5★ canon is the spine of it.",
+                key="make-shelf",
+            )
         )
-    )
+    else:
+        text = f"Create the existential-classics shelf and feature it ({len(members)} books ready)"
+        today.append(LaunchStep(text, "Your 5★ canon is the spine of it.", key="make-shelf"))
     if hyg.unrated_reads:
         today.append(
             LaunchStep(
