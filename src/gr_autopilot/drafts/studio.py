@@ -40,6 +40,23 @@ def drafted_book_ids(drafts_dir: Path) -> set[int]:
     return ids
 
 
+def posted_book_ids(drafts_dir: Path) -> set[int]:
+    """Book ids whose draft frontmatter says `status: posted`.
+
+    The DB only learns a review went live on the next export/ingest; between
+    posting and that ingest, the draft files are the fresher source. Missing
+    dir -> empty.
+    """
+    if not drafts_dir.is_dir():
+        return set()
+    ids: set[int] = set()
+    for path in sorted(drafts_dir.glob("*.md")):
+        meta, _ = parse_draft(path.read_text(encoding="utf-8"))
+        if meta.status == "posted":
+            ids.add(meta.book_id)
+    return ids
+
+
 def write_draft(drafts_dir: Path, meta: DraftMeta, body: str, *, overwrite: bool = False) -> Path:
     drafts_dir.mkdir(parents=True, exist_ok=True)
     if not overwrite and has_draft(drafts_dir, meta.book_id):

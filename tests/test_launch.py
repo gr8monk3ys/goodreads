@@ -45,6 +45,17 @@ def test_ranked_targets_lead_with_drafted_then_passion() -> None:
     assert titles.index("Beloved Classic") < titles.index("Faint Praise")  # passion before faint
 
 
+def test_ranked_targets_exclude_posted_drafts() -> None:
+    # A review posted live but not yet in the DB (export lags) must not be
+    # re-suggested as a "Post:" step.
+    facts = [
+        _read(1, "Posted Live", "A", 5),
+        _read(2, "Still To Post", "B", 5),
+    ]
+    ranked = ranked_review_targets(facts, drafted_ids={1, 2}, posted_ids={1})
+    assert [f.title for f in ranked] == ["Still To Post"]
+
+
 def test_plan_has_today_and_this_week_phases() -> None:
     facts = [_read(i, f"Book {i}", "A", 5) for i in range(1, 5)]
     plan = build_launch_plan(facts, drafted_ids=set(), bio="hi", reviews_per_week=3)

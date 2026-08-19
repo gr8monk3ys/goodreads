@@ -216,7 +216,7 @@ def dashboard(*, out: Path = Path("data/dashboard.html"), per_week: int = DEFAUL
 @app.command()
 def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = DEFAULT_CADENCE) -> None:
     """Sequence the action board into a paced launch campaign (what to do first). Read-only."""
-    from gr_autopilot.drafts.studio import drafted_book_ids
+    from gr_autopilot.drafts.studio import drafted_book_ids, posted_book_ids
     from gr_autopilot.insights.load import load_facts
     from gr_autopilot.launch import build_launch_plan, render_markdown
 
@@ -230,6 +230,7 @@ def launch(*, out: Path = Path("data/launch-plan.md"), per_week: int = DEFAULT_C
     plan = build_launch_plan(
         facts,
         drafted_ids=drafted_book_ids(settings.drafts_dir),
+        posted_ids=posted_book_ids(settings.drafts_dir),
         bio=_DASHBOARD_BIO,
         reviews_per_week=per_week,
     )
