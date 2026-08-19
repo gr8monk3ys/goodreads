@@ -20,7 +20,8 @@ def upsert_books(conn: sqlite3.Connection, records: Sequence[BookRecord]) -> int
             ON CONFLICT(book_id) DO UPDATE SET
                 title=excluded.title, author=excluded.author, isbn=excluded.isbn,
                 isbn13=excluded.isbn13, my_rating=excluded.my_rating,
-                avg_rating=excluded.avg_rating, exclusive_shelf=excluded.exclusive_shelf,
+                avg_rating=COALESCE(excluded.avg_rating, books.avg_rating),
+                exclusive_shelf=excluded.exclusive_shelf,
                 date_read=excluded.date_read, date_added=excluded.date_added,
                 num_pages=excluded.num_pages, original_pub_year=excluded.original_pub_year
             """,

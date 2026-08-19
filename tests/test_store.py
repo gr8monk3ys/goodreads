@@ -1,9 +1,15 @@
 import sqlite3
+from dataclasses import replace
 from pathlib import Path
 
 from gr_autopilot.ingest.csv_parser import parse_export
 from gr_autopilot.store.db import init_db
-from gr_autopilot.store.repository import targets, upsert_books, voice_samples
+from gr_autopilot.store.repository import (
+    set_book_avg_rating,
+    targets,
+    upsert_books,
+    voice_samples,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
 
@@ -51,6 +57,29 @@ def test_upsert_persists_pages_and_pub_year(conn: sqlite3.Connection) -> None:
     ).fetchone()
     assert row["num_pages"] == 412
     assert row["original_pub_year"] == 1965
+
+
+def test_reingest_without_avg_rating_preserves_enriched_value(
+    conn: sqlite3.Connection,
+) -> None:
+    # 2026 exports dropped the Average Rating column, so re-ingested records
+    # carry avg_rating=None. That must not wipe values set by `gr enrich`.
+    records = parse_export(FIXTURE)
+    upsert_books(conn, records)
+    set_book_avg_rating(conn, 11, 4.44)
+    stripped = [replace(r, avg_rating=None) for r in records]
+    upsert_books(conn, stripped)
+    row = conn.execute("SELECT avg_rating FROM books WHERE book_id = 11").fetchone()
+    assert row["avg_rating"] == 4.44
+
+
+def test_reingest_with_avg_rating_still_updates_it(conn: sqlite3.Connection) -> None:
+    records = parse_export(FIXTURE)
+    upsert_books(conn, records)
+    set_book_avg_rating(conn, 11, 1.11)
+    upsert_books(conn, records)  # fixture carries 4.25 for book 11
+    row = conn.execute("SELECT avg_rating FROM books WHERE book_id = 11").fetchone()
+    assert row["avg_rating"] == 4.25
 
 
 def test_init_db_migrates_legacy_books_table() -> None:
