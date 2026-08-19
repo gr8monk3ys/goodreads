@@ -49,6 +49,7 @@ class BookFact:
     has_review: bool = False
     review_text: str = ""
     genres: tuple[str, ...] = ()
+    shelves: tuple[str, ...] = ()  # custom (non-exclusive) shelf memberships
 
 
 def _read(facts: Sequence[BookFact]) -> list[BookFact]:

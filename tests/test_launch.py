@@ -1,5 +1,8 @@
+from dataclasses import replace
+
 from gr_autopilot.insights.metrics import BookFact
 from gr_autopilot.launch import (
+    LaunchPlan,
     build_launch_plan,
     ranked_review_targets,
     render_markdown,
@@ -117,3 +120,20 @@ def test_render_markdown_includes_phase_titles() -> None:
     md = render_markdown(build_launch_plan(facts, drafted_ids=set(), bio="b", reviews_per_week=3))
     assert "# " in md  # has a heading
     assert "This week" in md
+
+
+def test_today_step_reflects_existing_existential_shelf() -> None:
+    # Once the CSV shows the shelf populated, "create it" is stale advice —
+    # the step becomes a feature/verify step. The key stays stable so saved
+    # dashboard ticks survive the rewording.
+    fact = _read(1, "Siddhartha", "Hermann Hesse", 5)
+    on_shelf = replace(fact, shelves=("existential-classics",))
+
+    created = build_launch_plan([fact], drafted_ids=set(), bio="", reviews_per_week=3)
+    featured = build_launch_plan([on_shelf], drafted_ids=set(), bio="", reviews_per_week=3)
+
+    def step(plan: LaunchPlan) -> str:
+        return next(s.text for s in plan.phase("today").steps if s.key == "make-shelf")
+
+    assert step(created).startswith("Create the existential-classics shelf")
+    assert step(featured).startswith("Feature your existential-classics shelf")

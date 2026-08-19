@@ -9,11 +9,12 @@ from __future__ import annotations
 import sqlite3
 
 from gr_autopilot.insights.metrics import BookFact
-from gr_autopilot.store.repository import book_rows, genres_by_book
+from gr_autopilot.store.repository import book_rows, genres_by_book, shelves_by_book
 
 
 def load_facts(conn: sqlite3.Connection) -> list[BookFact]:
     genres = genres_by_book(conn)
+    shelves = shelves_by_book(conn)
     facts: list[BookFact] = []
     for row in book_rows(conn):
         book_id = int(row["book_id"])
@@ -32,6 +33,7 @@ def load_facts(conn: sqlite3.Connection) -> list[BookFact]:
                 has_review=bool(row["has_review"]),
                 review_text=row["review_text"] or "",
                 genres=genres.get(book_id, ()),
+                shelves=shelves.get(book_id, ()),
             )
         )
     return facts

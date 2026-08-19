@@ -190,6 +190,18 @@ def book_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
         """).fetchall()
 
 
+def shelves_by_book(conn: sqlite3.Connection) -> dict[int, tuple[str, ...]]:
+    """book_id -> its custom shelf names, for analytics joins."""
+    out: dict[int, list[str]] = {}
+    for row in conn.execute("""
+        SELECT bs.book_id, s.name FROM book_shelves bs
+        JOIN shelves s ON s.shelf_id = bs.shelf_id
+        ORDER BY bs.book_id, s.name
+        """):
+        out.setdefault(int(row["book_id"]), []).append(str(row["name"]))
+    return {bid: tuple(names) for bid, names in out.items()}
+
+
 def genres_by_book(conn: sqlite3.Connection) -> dict[int, tuple[str, ...]]:
     """book_id -> its genres, for analytics joins."""
     out: dict[int, list[str]] = {}

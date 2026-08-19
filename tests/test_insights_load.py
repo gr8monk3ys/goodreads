@@ -24,6 +24,7 @@ def test_load_facts_projects_books_reviews_and_genres(conn: sqlite3.Connection) 
     assert dune.has_review is True  # Dune has a non-empty review
     assert dune.review_text == "Loved it.\nA masterpiece."
     assert set(dune.genres) == {"Science Fiction", "Classics"}
+    assert set(dune.shelves) == {"sci-fi", "favorites"}  # custom shelves reach analytics
 
     skim = facts[22]
     assert skim.has_review is False  # empty review -> not a review
