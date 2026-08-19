@@ -11,6 +11,7 @@ heuristic, not a guarantee. Read-only.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass, field
 from math import ceil
 
@@ -22,15 +23,24 @@ READ = "read"
 DEFAULT_CADENCE = 3
 
 
-def ranked_review_targets(facts: Sequence[BookFact], drafted_ids: set[int]) -> list[BookFact]:
+def ranked_review_targets(
+    facts: Sequence[BookFact],
+    drafted_ids: set[int],
+    posted_ids: AbstractSet[int] = frozenset(),
+) -> list[BookFact]:
     """Unreviewed read books, ranked so the easiest, strongest ones come first.
 
     A ready draft leads (you can act today), then how much you loved it (`my_rating`), then a
     gentle lean toward broadly well-rated books (`avg_rating`), then title for a stable order.
     Note: `avg_rating` is the crowd's mean score, not readership — the export carries no
-    ratings count, so this orders by taste, not reach.
+    ratings count, so this orders by taste, not reach. `posted_ids` covers reviews already
+    live on Goodreads that the DB hasn't seen yet (the export lags the site).
     """
-    targets = [f for f in facts if f.exclusive_shelf == READ and not f.has_review]
+    targets = [
+        f
+        for f in facts
+        if f.exclusive_shelf == READ and not f.has_review and f.book_id not in posted_ids
+    ]
     return sorted(
         targets,
         key=lambda f: (
@@ -91,6 +101,7 @@ def build_launch_plan(
     facts: Sequence[BookFact],
     *,
     drafted_ids: set[int],
+    posted_ids: AbstractSet[int] = frozenset(),
     bio: str = "",
     reviews_per_week: int = DEFAULT_CADENCE,
 ) -> LaunchPlan:
@@ -99,7 +110,7 @@ def build_launch_plan(
     hyg = hygiene(facts)
     sig = signature(facts)
     members = existential_shelf_members(facts)
-    targets = ranked_review_targets(facts, drafted_ids)
+    targets = ranked_review_targets(facts, drafted_ids, posted_ids)
     weeks_to_finish = ceil(len(targets) / cadence) if targets else 0
 
     # 1 · Today — one-time polish that makes the profile read "complete" at a glance.

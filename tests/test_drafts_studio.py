@@ -8,6 +8,7 @@ from gr_autopilot.drafts.studio import (
     drafted_book_ids,
     has_draft,
     pending_target_rows,
+    posted_book_ids,
     status_counts,
     write_draft,
 )
@@ -71,3 +72,17 @@ def test_drafted_book_ids_from_one_directory_scan(tmp_path: Path) -> None:
 
 def test_drafted_book_ids_missing_dir_is_empty(tmp_path: Path) -> None:
     assert drafted_book_ids(tmp_path / "nope") == set()
+
+
+def test_posted_book_ids_reads_frontmatter_status(tmp_path: Path) -> None:
+    # After a review goes live its file is flipped to `status: posted`; the DB
+    # only learns on the next export, so launch must read it from the files.
+    write_draft(tmp_path, _meta(1), "still a draft")
+    write_draft(tmp_path, _meta(2, "Live One"), "posted body")
+    p2 = next(tmp_path.glob("2-*.md"))
+    p2.write_text(p2.read_text().replace("status: draft", "status: posted"))
+    assert posted_book_ids(tmp_path) == {2}
+
+
+def test_posted_book_ids_missing_dir_is_empty(tmp_path: Path) -> None:
+    assert posted_book_ids(tmp_path / "nope") == set()
