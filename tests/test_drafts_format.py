@@ -29,3 +29,18 @@ def test_slug_handles_punctuation_and_spaces() -> None:
     assert slug("The Brothers Karamazov") == "the-brothers-karamazov"
     assert slug("Notes from the Underground!") == "notes-from-the-underground"
     assert slug("  Multiple   Spaces  ") == "multiple-spaces"
+
+
+def test_parse_unwraps_quoted_titles() -> None:
+    # Titles containing a colon get written quoted; the quotes are syntax, not the title.
+    text = '---\nbook_id: 7\ntitle: "Flow: The Psychology of Optimal Experience"\n'
+    text += "author: M\nmy_rating: 4\nstatus: draft\nsource: s\n---\n\nbody\n"
+    meta, _ = parse_draft(text)
+    assert meta.title == "Flow: The Psychology of Optimal Experience"
+
+
+def test_parse_keeps_inner_quotes_intact() -> None:
+    text = '---\nbook_id: 8\ntitle: The "Good" Book\nauthor: M\nmy_rating: 4\n'
+    text += "status: draft\nsource: s\n---\n\nbody\n"
+    meta, _ = parse_draft(text)
+    assert meta.title == 'The "Good" Book'
