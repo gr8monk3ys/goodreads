@@ -297,6 +297,43 @@ def presence(*, top: int = 5) -> None:
 
 
 @app.command()
+def postplan(*, wpm: int = 100) -> None:
+    """Pace the unposted drafts into human-looking sittings (what to post when). Never posts."""
+    from gr_autopilot.drafts.format import parse_draft
+    from gr_autopilot.postplan import paced_schedule
+
+    settings = Settings()
+    if not settings.drafts_dir.is_dir():
+        typer.echo(f"no drafts yet — run `gr draft` first (dir: {settings.drafts_dir})")
+        return
+
+    loaded = [
+        parse_draft(p.read_text(encoding="utf-8")) for p in sorted(settings.drafts_dir.glob("*.md"))
+    ]
+    slots = paced_schedule(loaded, wpm=wpm)
+    if not slots:
+        typer.echo("every draft is already posted — nothing to schedule.")
+        return
+
+    last = slots[-1]
+    total = last.offset_minutes + last.gap_minutes
+    typer.echo(
+        f"{len(slots)} reviews · {total / 60:.1f}h end-to-end · "
+        f"{slots[-1].sitting} sittings · typing at {wpm} wpm"
+    )
+    for i, s in enumerate(slots, 1):
+        hours, mins = divmod(int(s.offset_minutes), 60)
+        typer.echo(
+            f"{i:3}. +{hours}h{mins:02d}m  wait {s.gap_minutes:4.1f}m  "
+            f"{s.my_rating}★ {s.words:3}w  {s.title[:48]}"
+        )
+        if s.break_after_minutes:
+            typer.echo(
+                f"      --- break {s.break_after_minutes:.0f}m (end of sitting {s.sitting}) ---"
+            )
+
+
+@app.command()
 def drafts() -> None:
     """Show review-draft status and the worklist still needing drafts. Never posts."""
     from gr_autopilot.drafts.studio import pending_target_rows, status_counts

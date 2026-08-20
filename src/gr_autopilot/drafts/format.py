@@ -60,7 +60,12 @@ def parse_draft(text: str) -> tuple[DraftMeta, str]:
     for line in lines[1:end]:
         if ": " in line:
             key, value = line.split(": ", 1)
-            fields[key.strip()] = value.strip()
+            value = value.strip()
+            # A value wrapping a colon is quoted so the split above can't truncate it;
+            # those outer quotes are syntax, not part of the title.
+            if len(value) > 1 and value[0] == value[-1] == '"':
+                value = value[1:-1]
+            fields[key.strip()] = value
     body = "\n".join(lines[end + 1 :]).strip()
     meta = DraftMeta(
         book_id=int(fields["book_id"]),
