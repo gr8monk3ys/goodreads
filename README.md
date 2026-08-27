@@ -50,6 +50,7 @@ everything above it is pure local data work — unit-tested without ever touchin
 | write spine — `set_rating`/`set_date`/`set_shelf` behind kill-switch/dry-run/idempotency/throttle | ✅ built & green |
 | `gr apply` (dry-run-first plan executor) + `gr login` | ✅ built & green |
 | live shelf-add (AppSync GraphQL, verified) · rating/date/create-shelf mutations | ✅ shelf · ⏳ need [live capture](docs/superpowers/research/write-flows-capture-runbook.md) |
+| export — `~/.books/goodreads.json` (schema `goodreads/1`, `BOOKS_DIR` overrides) for other tools (`gr export`) | ✅ built & green |
 | Scheduled `automation.yml` + self-hosted residential runner | ⏳ planned |
 
 ## Install
@@ -68,6 +69,7 @@ uv run gr ingest goodreads_library_export.csv
 uv run gr status                           # books=... review_targets=...
 uv run gr enrich                           # fetch genres for your books (public, no login)
 uv run gr insights                         # read-only analytics + suggested moves (md|table|json)
+uv run gr export                           # ~/.books/goodreads.json for other tools (BOOKS_DIR)
 
 # 2. (after installing voice+generate extras and ANTHROPIC_API_KEY) generate, dry-run
 uv run gr review --dry-run --limit 1       # generates drafts, logs the writes it WOULD make

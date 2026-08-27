@@ -38,6 +38,20 @@ def ingest(csv_path: Path) -> None:
 
 
 @app.command()
+def export(*, out: Path | None = None) -> None:
+    """Write goodreads.json (schema goodreads/1) for other tools. Read-only; honours BOOKS_DIR."""
+    from datetime import UTC, datetime
+
+    from gr_autopilot.export import FILENAME, build_export, write_export
+
+    settings = Settings()
+    conn = _open_db(settings)
+    doc = build_export(conn, generated_at=datetime.now(UTC).isoformat(timespec="seconds"))
+    path = write_export(doc, out or settings.books_dir / FILENAME)
+    typer.echo(f"wrote {path} · coverage {doc['coverage']}")
+
+
+@app.command()
 def status() -> None:
     """Show library size and how many books need a review."""
     settings = Settings()
