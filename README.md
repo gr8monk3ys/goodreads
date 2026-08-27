@@ -52,6 +52,7 @@ everything above it is pure local data work — unit-tested without ever touchin
 | live shelf-add (AppSync GraphQL, verified) · rating/date/create-shelf mutations | ✅ shelf · ⏳ need [live capture](docs/superpowers/research/write-flows-capture-runbook.md) |
 | export — `~/.books/goodreads.json` (schema `goodreads/1`, `BOOKS_DIR` overrides) for other tools (`gr export`) | ✅ built & green |
 | queue — read books missing a rating/review, blank-rating plan CSV + static page (`gr queue --plan --html`) | ✅ built & green |
+| post-reviews — approved drafts for rated, unreviewed read books through the write spine (`gr post-reviews --apply`) | ⏳ blocked on the review-flow capture (exits 3, no browser) |
 | Scheduled `automation.yml` + self-hosted residential runner | ⏳ planned |
 
 ## Install
@@ -72,6 +73,7 @@ uv run gr enrich                           # fetch genres for your books (public
 uv run gr insights                         # read-only analytics + suggested moves (md|table|json)
 uv run gr export                           # ~/.books/goodreads.json for other tools (BOOKS_DIR)
 uv run gr queue --plan --html              # worklist -> data/write-plan.csv (ratings left blank) + data/queue.html
+uv run gr post-reviews                     # dry run: approved drafts that could be posted (--apply is blocked until capture)
 
 # 2. (after installing voice+generate extras and ANTHROPIC_API_KEY) generate, dry-run
 uv run gr review --dry-run --limit 1       # generates drafts, logs the writes it WOULD make
