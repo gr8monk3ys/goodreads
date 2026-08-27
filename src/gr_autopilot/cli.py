@@ -52,6 +52,53 @@ def export(*, out: Path | None = None) -> None:
 
 
 @app.command()
+def queue(
+    *,
+    plan: bool = typer.Option(False, "--plan", help="write data/write-plan.csv"),
+    html: bool = typer.Option(False, "--html", help="write data/queue.html"),
+    stale_days: int = 90,
+) -> None:
+    """Read books missing a rating or a review, newest first; stale currently-reading flagged.
+
+    Read-only. --plan leaves every set_rating value BLANK for you to fill (ratings are never
+    guessed) and adds set_shelf rows for taxonomy shelves only.
+    """
+    from gr_autopilot.curate import shelf_suggestions
+    from gr_autopilot.insights.load import load_facts
+    from gr_autopilot.queue import NEEDS_RATING, build_queue, plan_rows, render_html, render_plan
+
+    settings = Settings()
+    conn = _open_db(settings)
+    entries = build_queue(conn, stale_days=stale_days)
+    n_rating = sum(NEEDS_RATING in e.needs for e in entries)
+    typer.echo(f"queue: {len(entries)} books · {n_rating} need a rating")
+    for e in entries:
+        stars = f"{e.rating}★" if e.rating else "unrated"
+        typer.echo(
+            f"  [{e.book_id}] {e.title} — {e.author} ({stars}, {e.date_read or 'undated'}) "
+            f"needs {', '.join(sorted(e.needs))}"
+        )
+    if not (plan or html):
+        return
+
+    existing = {str(r["name"]) for r in conn.execute("SELECT name FROM shelves")}
+    rows = plan_rows(entries, shelf_suggestions(load_facts(conn), existing))
+    text, lines = render_plan(rows)
+    data_dir = settings.db_path.parent
+    if plan:
+        out = data_dir / "write-plan.csv"
+        out.write_text(text, encoding="utf-8")
+        n_shelf = sum(r[0] == "set_shelf" for r in rows)
+        typer.echo(
+            f"wrote {out}: {len(rows) - n_shelf} set_rating rows (blank) · {n_shelf} set_shelf rows"
+        )
+    if html:
+        out = data_dir / "queue.html"
+        out.write_text(render_html(entries, lines), encoding="utf-8")
+        typer.echo(f"wrote {out}")
+
+
+@app.command()
 def status() -> None:
     """Show library size and how many books need a review."""
     settings = Settings()
