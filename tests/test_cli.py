@@ -287,3 +287,29 @@ def test_run_invokes_pipeline_with_enrich(monkeypatch: pytest.MonkeyPatch) -> No
     assert result.exit_code == 0, result.output
     assert seen["enrich"] is True  # full run enriches by default
     assert "run=9" in result.output
+
+
+def test_export_writes_versioned_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    monkeypatch.setenv("BOOKS_DIR", str(tmp_path / "books"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["export"])
+    assert result.exit_code == 0, result.output
+    doc = json.loads((tmp_path / "books" / "goodreads.json").read_text(encoding="utf-8"))
+    assert doc["schema"] == "goodreads/1"
+    assert doc["coverage"] == {"read": 2, "rated": 2, "reviewed": 1, "queued": 1}
+    assert "coverage" in result.output
+
+
+def test_queue_lists_and_writes_plan_and_html(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DB_PATH", str(tmp_path / "x.db"))
+    runner.invoke(app, ["ingest", str(FIXTURE)])
+    result = runner.invoke(app, ["queue", "--plan", "--html"])
+    assert result.exit_code == 0, result.output
+    assert "queue: 1 books" in result.output  # Some Skim: rated, unreviewed
+    assert "Some Skim" in result.output
+    plan = (tmp_path / "write-plan.csv").read_text(encoding="utf-8")
+    assert "set_rating" not in plan  # nothing unrated -> no blank rows, none invented
+    assert (tmp_path / "queue.html").exists()

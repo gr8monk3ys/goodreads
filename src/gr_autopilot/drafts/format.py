@@ -19,6 +19,12 @@ _GUARD = (
     "When you're happy with it, change `status: draft` to `status: approved`. -->"
 )
 _SLUG_STRIP = re.compile(r"[^a-z0-9]+")
+_COMMENT = re.compile(r"<!--.*?-->", re.S)
+
+
+def review_text(body: str) -> str:
+    """The review itself: the draft body with the editing guard (any HTML comment) removed."""
+    return _COMMENT.sub("", body).strip()
 
 
 @dataclass(frozen=True)

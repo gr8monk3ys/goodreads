@@ -78,3 +78,25 @@ class NullBackend:
 
     def add_to_list(self, list_id: str, book_id: int) -> None:
         return None
+
+
+class _ProbePage:
+    """Stands in for a Playwright page during capability probes; any use is a bug."""
+
+    def __getattr__(self, name: str) -> object:
+        raise RuntimeError(f"probe page used ({name}); a probe must never touch the site")
+
+
+def probe_post_review(backend: GoodreadsBackend) -> bool:
+    """True if the backend has a captured review flow.
+
+    Backends whose review mutation is not yet captured raise NotImplementedError before
+    touching anything; the probe is therefore side-effect free and needs no browser.
+    """
+    try:
+        backend.post_review(0, "", 0)
+    except NotImplementedError:
+        return False
+    except Exception:  # noqa: BLE001 - the flow exists; it just can't run offline
+        return True
+    return True

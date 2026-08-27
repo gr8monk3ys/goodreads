@@ -16,6 +16,8 @@ from gr_autopilot.insights.metrics import BookFact
 
 READ = "read"
 TO_READ = "to-read"
+CURRENTLY_READING = "currently-reading"
+EXISTENTIAL_SHELF = "existential-classics"
 _YEAR_RE = re.compile(r"(\d{4})")
 
 # The one shared definition of the featured-shelf membership — launch and dashboard
@@ -146,6 +148,35 @@ def _era_band(year: int) -> str:
     if year < 2000:
         return "20th-century"
     return "contemporary"
+
+
+def shelf_suggestions(
+    facts: Sequence[BookFact], existing_shelves: set[str]
+) -> list[tuple[int, str]]:
+    """(book_id, shelf) adds for read books: the era band and the existential shelf.
+
+    Only shelves that already exist on the account (`existing_shelves`) and that the book
+    isn't on yet — the output is meant to become `set_shelf` rows, and a shelf-add to a
+    missing shelf is a wasted write. Exclusive status shelves are never suggested.
+    """
+    existential = {f.book_id for f in existential_shelf_members(facts)}
+    out: list[tuple[int, str]] = []
+    for f in facts:
+        if f.exclusive_shelf != READ:
+            continue
+        wanted: list[str] = []
+        if f.original_pub_year is not None:
+            wanted.append(_era_band(f.original_pub_year))
+        if f.book_id in existential:
+            wanted.append(EXISTENTIAL_SHELF)
+        out.extend(
+            (f.book_id, shelf)
+            for shelf in wanted
+            if shelf in existing_shelves
+            and shelf not in f.shelves
+            and shelf not in (READ, TO_READ, CURRENTLY_READING)
+        )
+    return sorted(set(out))
 
 
 def shelf_plan(facts: Sequence[BookFact], min_books: int = 3) -> list[ProposedShelf]:

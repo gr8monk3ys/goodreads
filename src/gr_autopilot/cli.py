@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -14,7 +15,9 @@ from gr_autopilot.store.db import connect, init_db
 from gr_autopilot.store.repository import targets, upsert_books
 
 if TYPE_CHECKING:
-    from gr_autopilot.actions.core import ActionResult
+    from collections.abc import Iterator
+
+    from gr_autopilot.actions.core import ActionResult, GoodreadsBackend, Throttle
     from gr_autopilot.actions.executor import ActionExecutor
     from gr_autopilot.actions.plan import PlanItem
 
@@ -35,6 +38,67 @@ def ingest(csv_path: Path) -> None:
     conn = _open_db(settings)
     count = upsert_books(conn, parse_export(csv_path))
     typer.echo(f"Ingested {count} books into {settings.db_path}")
+
+
+@app.command()
+def export(*, out: Path | None = None) -> None:
+    """Write goodreads.json (schema goodreads/1) for other tools. Read-only; honours BOOKS_DIR."""
+    from datetime import UTC, datetime
+
+    from gr_autopilot.export import FILENAME, build_export, write_export
+
+    settings = Settings()
+    conn = _open_db(settings)
+    doc = build_export(conn, generated_at=datetime.now(UTC).isoformat(timespec="seconds"))
+    path = write_export(doc, out or settings.books_dir / FILENAME)
+    typer.echo(f"wrote {path} · coverage {doc['coverage']}")
+
+
+@app.command()
+def queue(
+    *,
+    plan: bool = typer.Option(False, "--plan", help="write data/write-plan.csv"),
+    html: bool = typer.Option(False, "--html", help="write data/queue.html"),
+    stale_days: int = 90,
+) -> None:
+    """Read books missing a rating or a review, newest first; stale currently-reading flagged.
+
+    Read-only. --plan leaves every set_rating value BLANK for you to fill (ratings are never
+    guessed) and adds set_shelf rows for taxonomy shelves only.
+    """
+    from gr_autopilot.curate import shelf_suggestions
+    from gr_autopilot.insights.load import load_facts
+    from gr_autopilot.queue import NEEDS_RATING, build_queue, plan_rows, render_html, render_plan
+
+    settings = Settings()
+    conn = _open_db(settings)
+    entries = build_queue(conn, stale_days=stale_days)
+    n_rating = sum(NEEDS_RATING in e.needs for e in entries)
+    typer.echo(f"queue: {len(entries)} books · {n_rating} need a rating")
+    for e in entries:
+        stars = f"{e.rating}★" if e.rating else "unrated"
+        typer.echo(
+            f"  [{e.book_id}] {e.title} — {e.author} ({stars}, {e.date_read or 'undated'}) "
+            f"needs {', '.join(sorted(e.needs))}"
+        )
+    if not (plan or html):
+        return
+
+    existing = {str(r["name"]) for r in conn.execute("SELECT name FROM shelves")}
+    rows = plan_rows(entries, shelf_suggestions(load_facts(conn), existing))
+    text, lines = render_plan(rows)
+    data_dir = settings.db_path.parent
+    if plan:
+        out = data_dir / "write-plan.csv"
+        out.write_text(text, encoding="utf-8")
+        n_shelf = sum(r[0] == "set_shelf" for r in rows)
+        typer.echo(
+            f"wrote {out}: {len(rows) - n_shelf} set_rating rows (blank) · {n_shelf} set_shelf rows"
+        )
+    if html:
+        out = data_dir / "queue.html"
+        out.write_text(render_html(entries, lines), encoding="utf-8")
+        typer.echo(f"wrote {out}")
 
 
 @app.command()
@@ -438,6 +502,92 @@ def apply(plan_csv: Path, *, dry_run: bool = True) -> None:
         f"apply (LIVE): {live.get('done', 0)} done · {live.get('failed', 0)} failed · "
         f"{live.get('skipped_idempotent', 0)} already-done · {capped} capped this run. "
         "`gr stop` halts mid-run; re-run to continue past the cap."
+    )
+
+
+def _probe_backend() -> GoodreadsBackend:
+    """The live backend over a stand-in page: enough to ask whether reviews are captured."""
+    from gr_autopilot.actions.core import _ProbePage
+    from gr_autopilot.actions.graphql_backend import GoodreadsGraphQLBackend
+
+    return GoodreadsGraphQLBackend(_ProbePage())
+
+
+@contextmanager
+def _review_backend() -> Iterator[GoodreadsBackend]:
+    """The live backend on a logged-in page (needs `gr login`)."""
+    from gr_autopilot.actions.graphql_backend import GoodreadsGraphQLBackend
+    from gr_autopilot.browser.session import authed_page, is_logged_in
+
+    with authed_page() as page:
+        if not is_logged_in(page):
+            typer.echo("Not logged in — run `gr login` first (saves your browser session).")
+            raise typer.Exit(1)
+        yield GoodreadsGraphQLBackend(page)
+
+
+def _live_throttle() -> Throttle:
+    from gr_autopilot.actions.core import Throttle
+
+    return Throttle()
+
+
+@app.command("post-reviews")
+def post_reviews(*, per_run: int = 5, apply: bool = False) -> None:
+    """Post approved review drafts for rated read books with no review on the account.
+
+    DRY RUN by default. --apply needs a captured review flow: while both backends still
+    raise NotImplementedError for reviews it prints the blocked message and exits 3
+    without launching a browser. Honours data/STOP and idempotency like every write.
+    """
+    from collections import Counter
+
+    from gr_autopilot.actions.core import probe_post_review
+    from gr_autopilot.actions.executor import ActionExecutor
+    from gr_autopilot.postreviews import BLOCKED_MESSAGE, select_postable
+    from gr_autopilot.store.repository import finish_run, start_run
+
+    settings = Settings()
+    conn = _open_db(settings)
+    per_run = min(per_run, settings.max_actions_per_run)
+    postable = select_postable(conn, settings.drafts_dir, per_run)
+    mode = "LIVE" if apply else "DRY RUN — nothing posted"
+    typer.echo(f"post-reviews ({mode}): {len(postable)} approved drafts ready (per-run {per_run})")
+    for p in postable:
+        typer.echo(f"  [{p.book_id}] {p.title} ({p.rating}★, {len(p.text.split())} words)")
+    if not apply:
+        typer.echo("Re-run with --apply to post (requires the review flow to be captured).")
+        return
+
+    stop_file = settings.db_path.parent / "STOP"
+    if settings.disable_writes or stop_file.exists():
+        typer.echo("kill switch on — nothing posted")
+        return
+    # Capability is a property of the backend, not of the queue: report it even when
+    # there is nothing to post, so the run log says why the command is inert.
+    if not probe_post_review(_probe_backend()):
+        typer.echo(BLOCKED_MESSAGE)
+        raise typer.Exit(3)
+    if not postable:
+        return
+
+    run_id = start_run(conn, "live")
+    with _review_backend() as backend:
+        ex = ActionExecutor(
+            conn,
+            backend,
+            run_id=run_id,
+            settings=settings,
+            throttle=_live_throttle(),
+            dry_run=False,
+            stop_file=stop_file,
+        )
+        results = [ex.post_review(p.book_id, p.text, p.rating) for p in postable]
+    tally: Counter[str] = Counter(r.status for r in results)
+    finish_run(conn, run_id, len(postable), tally.get("done", 0), tally.get("failed", 0))
+    typer.echo(
+        f"post-reviews (LIVE): {tally.get('done', 0)} done · {tally.get('failed', 0)} failed · "
+        f"{tally.get('skipped_idempotent', 0)} already-done"
     )
 
 

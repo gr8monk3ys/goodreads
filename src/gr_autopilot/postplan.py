@@ -15,14 +15,12 @@ Pure: no I/O, no posting. Read-only.
 from __future__ import annotations
 
 import hashlib
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from gr_autopilot.drafts.format import DraftMeta
+from gr_autopilot.drafts.format import DraftMeta, review_text
 
 POSTED = "posted"
-_COMMENT = re.compile(r"<!--.*?-->", re.S)
 
 
 @dataclass(frozen=True)
@@ -52,7 +50,7 @@ def _spread(book_id: int, low: float, high: float, salt: str) -> float:
 
 def review_words(body: str) -> int:
     """Word count of the review itself, with the editing guard comment stripped out."""
-    return len(_COMMENT.sub("", body).split())
+    return len(review_text(body).split())
 
 
 def paced_schedule(

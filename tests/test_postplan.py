@@ -4,7 +4,9 @@ from gr_autopilot.postplan import paced_schedule
 GUARD = "<!-- Edit the review above in your own words. -->"
 
 
-def _draft(book_id: int, words: int, status: str = "draft", rating: int = 4):
+def _draft(
+    book_id: int, words: int, status: str = "draft", rating: int = 4
+) -> tuple[DraftMeta, str]:
     meta = DraftMeta(
         book_id=book_id, title=f"Book {book_id}", author="A", my_rating=rating, status=status
     )
