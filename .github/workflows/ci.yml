@@ -2,6 +2,13 @@ name: ci
 on:
   pull_request:
     branches: [main]
+  # Also verify main itself. PR-gated CI proves each change in isolation; it
+  # cannot catch two PRs that pass separately and break together once merged.
+  # Without this, ci_watchdog reports goodreads as having "no green run on
+  # record" and cannot tell a healthy default branch from an unverified one.
+  # Free here: the repo is public, so Actions minutes are unlimited.
+  push:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}

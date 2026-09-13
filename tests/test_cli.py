@@ -5,6 +5,7 @@ import pytest
 from typer.testing import CliRunner
 
 from gr_autopilot.cli import app
+from gr_autopilot.drafts.format import DraftMeta, render_draft
 
 runner = CliRunner()
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_export.csv"
@@ -313,3 +314,53 @@ def test_queue_lists_and_writes_plan_and_html(
     plan = (tmp_path / "write-plan.csv").read_text(encoding="utf-8")
     assert "set_rating" not in plan  # nothing unrated -> no blank rows, none invented
     assert (tmp_path / "queue.html").exists()
+
+
+def _write_draft(
+    drafts_dir: Path, book_id: int, words: int, *, status: str = "draft", rating: int = 4
+) -> None:
+    drafts_dir.mkdir(parents=True, exist_ok=True)
+    meta = DraftMeta(
+        book_id=book_id, title=f"Book {book_id}", author="A", my_rating=rating, status=status
+    )
+    body = ("word " * words).strip()
+    (drafts_dir / f"{book_id}.md").write_text(render_draft(meta, body), encoding="utf-8")
+
+
+def test_postplan_no_drafts_dir_is_friendly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(tmp_path / "drafts" / "reviews"))
+    result = runner.invoke(app, ["postplan"])
+    assert result.exit_code == 0, result.output
+    assert "no drafts yet" in result.output.lower()
+    assert "gr draft" in result.output
+
+
+def test_postplan_all_posted_is_friendly(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    drafts_dir = tmp_path / "drafts"
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(drafts_dir))
+    _write_draft(drafts_dir, 1, 100, status="posted")
+    result = runner.invoke(app, ["postplan"])
+    assert result.exit_code == 0, result.output
+    assert "already posted" in result.output.lower()
+
+
+def test_postplan_paces_and_prints_schedule(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    drafts_dir = tmp_path / "drafts"
+    monkeypatch.setenv("GR_DRAFTS_DIR", str(drafts_dir))
+    _write_draft(drafts_dir, 1, 60)
+    _write_draft(drafts_dir, 2, 400)
+    _write_draft(drafts_dir, 3, 100, status="posted")  # excluded from the plan
+
+    result = runner.invoke(app, ["postplan", "--wpm", "100"])
+
+    assert result.exit_code == 0, result.output
+    assert "2 reviews" in result.output
+    assert "sittings" in result.output
+    assert "typing at 100 wpm" in result.output
+    assert "Book 1" in result.output
+    assert "Book 2" in result.output
+    assert "Book 3" not in result.output  # the already-posted draft is never scheduled
