@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import http.client
 import urllib.request
 
 from gr_autopilot.catalog.parse import extract_next_data, parse_book_meta
@@ -27,9 +28,19 @@ class GoodreadsPublicCatalog:
     def get_meta(self, book_id: int) -> BookMeta | None:
         url = f"{_BASE}{int(book_id)}"
         request = urllib.request.Request(url, headers={"User-Agent": _UA})
-        try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as resp:  # nosec B310 - fixed https host
-                html = resp.read().decode("utf-8", "replace")
-            return parse_book_meta(extract_next_data(html))
-        except (ValueError, OSError):
-            return None
+        # One retry: a truncated chunked body (http.client.IncompleteRead) is
+        # usually transient. It is an HTTPException, NOT an OSError, so it used
+        # to escape this method and kill the whole `gr enrich` run (launchd
+        # exit 1 on 2026-09-22) instead of skipping one book.
+        for attempt in range(2):
+            try:
+                with urllib.request.urlopen(request, timeout=self._timeout) as resp:  # nosec B310 - fixed https host
+                    html = resp.read().decode("utf-8", "replace")
+                return parse_book_meta(extract_next_data(html))
+            except http.client.HTTPException:
+                if attempt == 0:
+                    continue
+                return None
+            except (ValueError, OSError):
+                return None
+        return None
